@@ -408,7 +408,9 @@ impl Connect {
     pub fn addr(&self) -> &Address {
         match &self.model {
             Side::Client(model) => {
-                let Header::Connect(conn) = model.header() else { unreachable!() };
+                let Header::Connect(conn) = model.header() else {
+                    unreachable!()
+                };
                 conn.addr()
             }
             Side::Server(model) => model.addr(),
