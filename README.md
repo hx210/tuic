@@ -2,7 +2,10 @@
 
 Delicately-TUICed 0-RTT proxy protocol
 
-**Warning: TUIC's [dev](https://github.com/EAimTY/tuic/tree/dev) branch is under heavy development. For end-user, please check out the latest released tag**
+A fork of original TUIC repo https://github.com/EAimTY/tuic
+
+Maintain Only. No more new features but
+there would be bugfixs or performance improvements
 
 ## Introduction
 
@@ -24,7 +27,7 @@ When paired with QUIC, TUIC can achieve:
     - Optional 0-RTT connection handshake
     - Connection migration
 
-Fully-detailed TUIC protocol specification can be found in [SPEC.md](https://github.com/EAimTY/tuic/blob/dev/SPEC.md)
+Fully-detailed TUIC protocol specification can be found in [SPEC.md](https://github.com/EAimTY/tuic/tree/dev/tuic/SPEC.md)
 
 ## Overview
 
