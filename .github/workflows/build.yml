@@ -16,32 +16,31 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: recursive
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
 
-    - name: Resume cache
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-        key: ${{ runner.os }}-build-${{ hashFiles('**/Cargo.toml') }}
-        restore-keys: |
-          ${{ runner.os }}-build
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ matrix.target }}-build-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: |
+            ${{ matrix.target }}-build
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly-2024-03-01
+          components: clippy
 
-    - uses: dtolnay/rust-toolchain@master
-      with:
-        toolchain: nightly-2024-03-01
-        components: clippy
+      - name: Build
+        run: cargo build --verbose
 
-    - name: Build
-      run: cargo build --verbose
+      - name: Run tests
+        run: cargo test --verbose
 
-    - name: Run tests
-      run: cargo test --verbose
+      - uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --all-features
 
-    - uses: actions-rs/clippy-check@v1
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        args: --all-features
