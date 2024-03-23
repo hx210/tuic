@@ -5,7 +5,7 @@ Delicately-TUICed 0-RTT proxy protocol
 A fork of original TUIC repo https://github.com/EAimTY/tuic
 
 Maintain Only. No more new features but
-there would be bugfixs or performance improvements
+there would be bugfixes or performance improvements
 
 ## Introduction
 

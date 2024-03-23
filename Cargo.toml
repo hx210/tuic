@@ -2,7 +2,7 @@
 members = ["tuic", "tuic-quinn", "tuic-server", "tuic-client"]
 
 [profile.release]
-opt-level = 'z'
+opt-level = 3
 debug = 1
 lto = true
 incremental = false
