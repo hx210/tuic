@@ -134,7 +134,10 @@ impl Connection {
             };
 
             let Some(socket_addr) = resolve_dns(&addr).await?.next() else {
-                return Err(Error::from(IoError::new(ErrorKind::NotFound, "no address resolved")));
+                return Err(Error::from(IoError::new(
+                    ErrorKind::NotFound,
+                    "no address resolved",
+                )));
             };
 
             session.send(pkt, socket_addr).await
