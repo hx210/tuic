@@ -3,7 +3,7 @@ use crossbeam_utils::atomic::AtomicCell;
 use std::{
     fmt::{Display, Formatter, Result as FmtResult},
     ops::Deref,
-    sync::Arc
+    sync::Arc,
 };
 use tokio::sync::broadcast::Sender;
 use tokio::sync::RwLock as AsyncRwLock;

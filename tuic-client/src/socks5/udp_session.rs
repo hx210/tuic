@@ -1,7 +1,6 @@
 use crate::error::Error;
 use bytes::Bytes;
 use once_cell::sync::OnceCell;
-use parking_lot::Mutex;
 use socket2::{Domain, Protocol, SockAddr, Socket, Type};
 use socks5_proto::Address;
 use socks5_server::AssociatedUdpSocket;
@@ -12,8 +11,9 @@ use std::{
     sync::Arc,
 };
 use tokio::net::UdpSocket;
+use tokio::sync::RwLock as AsyncRwLock;
 
-pub static UDP_SESSIONS: OnceCell<Mutex<HashMap<u16, UdpSession>>> = OnceCell::new();
+pub static UDP_SESSIONS: OnceCell<AsyncRwLock<HashMap<u16, UdpSession>>> = OnceCell::new();
 
 #[derive(Clone)]
 pub struct UdpSession {

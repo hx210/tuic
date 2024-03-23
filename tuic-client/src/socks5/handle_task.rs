@@ -40,7 +40,8 @@ impl Server {
                 UDP_SESSIONS
                     .get()
                     .unwrap()
-                    .lock()
+                    .write()
+                    .await
                     .insert(assoc_id, session.clone());
 
                 let handle_local_incoming_pkt = async move {
@@ -95,7 +96,8 @@ impl Server {
                 UDP_SESSIONS
                     .get()
                     .unwrap()
-                    .lock()
+                    .write()
+                    .await
                     .remove(&assoc_id)
                     .unwrap();
 

@@ -132,7 +132,8 @@ impl Connection {
                 let session = SOCKS5_UDP_SESSIONS
                     .get()
                     .unwrap()
-                    .lock()
+                    .read()
+                    .await
                     .get(&assoc_id)
                     .cloned();
 

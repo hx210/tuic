@@ -1,6 +1,5 @@
 use crate::{config::Local, error::Error};
 use once_cell::sync::OnceCell;
-use parking_lot::Mutex;
 use socket2::{Domain, Protocol, SockAddr, Socket, Type};
 use socks5_server::{
     auth::{NoAuth, Password},
@@ -15,6 +14,7 @@ use std::{
     },
 };
 use tokio::net::TcpListener;
+use tokio::sync::RwLock as AsyncRwLock;
 
 mod handle_task;
 mod udp_session;
@@ -44,7 +44,7 @@ impl Server {
             .unwrap();
 
         UDP_SESSIONS
-            .set(Mutex::new(HashMap::new()))
+            .set(AsyncRwLock::new(HashMap::new()))
             .map_err(|_| "failed initializing socks5 UDP session pool")
             .unwrap();
 
