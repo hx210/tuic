@@ -2,8 +2,8 @@ name: binary-release
 
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - dev
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -20,7 +20,6 @@ jobs:
       contents: write
     runs-on: ${{ matrix.os }}
     strategy:
-    fail-fast: false
       matrix:
         include:
           # Linux
@@ -202,7 +201,9 @@ jobs:
         uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          prerelease: false
+          automatic_release_tag: latest
+          prerelease: true
+          title: "Bleeding edge/前沿版本"
           files: |
             packages/*
             LICENSE
