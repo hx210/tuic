@@ -129,13 +129,12 @@ jobs:
             file-ext: ""
             extra-args: ""
 
-
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: true
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
@@ -152,7 +151,7 @@ jobs:
       # Build client and server separately
       # But i gotta say that's ugly
       # Blame me that can't figure out how GHA matrix works
-      - uses: actions-rs/cargo@v1
+      - uses: clechasseur/rs-cargo@v2
         with:
           use-cross: ${{ matrix.cross }}
           command: build
@@ -162,12 +161,12 @@ jobs:
         run: mv target/${{ matrix.target }}/release/${{ env.PACKAGE }}${{ matrix.file-ext }} ${{ env.PACKAGE }}-${{ matrix.release-name }}${{ matrix.file-ext }}
 
       - name: Upload binaries
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
-          name: compile
+          name: binary-${{ matrix.target }}-${{ env.PACKAGE }}
           path: ${{ env.PACKAGE }}-${{ matrix.release-name }}${{ matrix.file-ext }}
 
-      - uses: actions-rs/cargo@v1
+      - uses: clechasseur/rs-cargo@v2
         with:
           use-cross: ${{ matrix.cross }}
           command: build
@@ -177,9 +176,9 @@ jobs:
         run: mv target/${{ matrix.target }}/release/${{ env.PACKAGE2 }}${{ matrix.file-ext }} ${{ env.PACKAGE2 }}-${{ matrix.release-name }}${{ matrix.file-ext }}
 
       - name: Upload binaries
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
-          name: compile
+          name: binary-${{ matrix.target }}-${{ env.PACKAGE2 }}
           path: ${{ env.PACKAGE2 }}-${{ matrix.release-name }}${{ matrix.file-ext }}
 
   release:
@@ -191,10 +190,16 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Download binaries
-        uses: actions/download-artifact@v2
+      - name: Merge binaries
+        uses: actions/upload-artifact/merge@v4
         with:
-          name: compile
+          name: binaries
+          pattern: binary-*
+
+      - name: Download binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: binaries
           path: ./packages
 
       - name: Github release
