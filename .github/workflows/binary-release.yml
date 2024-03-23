@@ -20,7 +20,6 @@ jobs:
       contents: write
     runs-on: ${{ matrix.os }}
     strategy:
-    fail-fast: false
       matrix:
         include:
           # Linux
