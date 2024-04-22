@@ -13,7 +13,7 @@ This implementation only contains the most basic requirements of a functional TU
 
 ## Usage
 
-Download the latest binary from [releases](https://github.com/EAimTY/tuic/releases).
+Download the latest binary from [releases](https://github.com/Itsusinn/tuic/releases).
 
 Or install from [crates.io](https://crates.io/crates/tuic-server):
 
@@ -32,7 +32,7 @@ Or with Docker
 ```bash
 docker run --name tuic-server \
   --restart always \
-  —-network host \
+  --network host \
   -v /PATH/TO/CONFIG:/etc/tuic/config.json \
   -v /PATH/TO/CERTIFICATE:PATH/TO/CERTIFICATE \
   -v /PATH/TO/PRIVATE_KEY:PATH/TO/PRIVATE_KEY \
