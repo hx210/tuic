@@ -3,15 +3,17 @@ use crate::{
     error::Error,
     utils::{self, CongestionControl, ServerAddr, UdpRelayMode},
 };
+use anyhow::Context;
 use crossbeam_utils::atomic::AtomicCell;
 use once_cell::sync::OnceCell;
 use quinn::{
     congestion::{BbrConfig, CubicConfig, NewRenoConfig},
+    crypto::rustls::QuicClientConfig,
     ClientConfig, Connection as QuinnConnection, Endpoint as QuinnEndpoint, EndpointConfig,
     TokioRuntime, TransportConfig, VarInt, ZeroRttAccepted,
 };
 use register_count::Counter;
-use rustls::{version, ClientConfig as RustlsClientConfig};
+use rustls::ClientConfig as RustlsClientConfig;
 use std::{
     net::{Ipv4Addr, Ipv6Addr, SocketAddr, UdpSocket},
     sync::{atomic::AtomicU32, Arc},
@@ -50,19 +52,18 @@ impl Connection {
     pub fn set_config(cfg: Relay) -> Result<(), Error> {
         let certs = utils::load_certs(cfg.certificates, cfg.disable_native_certs)?;
 
-        let mut crypto = RustlsClientConfig::builder()
-            .with_safe_default_cipher_suites()
-            .with_safe_default_kx_groups()
-            .with_protocol_versions(&[&version::TLS13])
-            .unwrap()
-            .with_root_certificates(certs)
-            .with_no_client_auth();
+        let mut crypto =
+            RustlsClientConfig::builder_with_protocol_versions(&[&rustls::version::TLS13])
+                .with_root_certificates(certs)
+                .with_no_client_auth();
 
         crypto.alpn_protocols = cfg.alpn;
         crypto.enable_early_data = true;
         crypto.enable_sni = !cfg.disable_sni;
 
-        let mut config = ClientConfig::new(Arc::new(crypto));
+        let mut config = ClientConfig::new(Arc::new(
+            QuicClientConfig::try_from(crypto).context("no initial cipher suite found")?,
+        ));
         let mut tp_cfg = TransportConfig::default();
 
         tp_cfg
