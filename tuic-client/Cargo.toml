@@ -31,7 +31,7 @@ socks5-server = { version = "0.8", default-features = false }
 uuid = { version = "1", default-features = false, features = ["serde", "std"] }
 
 # QUIC
-quinn = { branch = "main", git = "https://github.com/quinn-rs/quinn.git", default-features = false, features = ["runtime-tokio", "rustls", "platform-verifier", "log", "lock_tracking"] }
+quinn = { branch = "main", git = "https://github.com/quinn-rs/quinn.git", default-features = false, features = ["runtime-tokio", "rustls", "log", "lock_tracking"] }
 
 # TUIC
 tuic = { path = "../tuic", default-features = false }
@@ -46,7 +46,7 @@ tokio-util = { version = "0.7", default-features = false, features = ["compat"] 
 # TLS
 rustls = { version = "0.23", default-features = false }
 rustls-native-certs = { version = "0.7", default-features = false }
-rustls-pemfile = { version = "2", default-features = false }
+rustls-pemfile = { version = "2", default-features = false, features = ["std"] }
 
 # Error-handling
 thiserror = { version = "1", default-features = false }
