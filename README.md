@@ -27,19 +27,19 @@ When paired with QUIC, TUIC can achieve:
     - Optional 0-RTT connection handshake
     - Connection migration
 
-Fully-detailed TUIC protocol specification can be found in [SPEC.md](https://github.com/EAimTY/tuic/tree/dev/tuic/SPEC.md)
+Fully-detailed TUIC protocol specification can be found in [SPEC.md](https://github.com/Itsusinn/tuic/tree/dev/tuic/SPEC.md)
 
 ## Overview
 
 There are 4 crates provided in this repository:
 
-- **[tuic](https://github.com/EAimTY/tuic/tree/dev/tuic)** - Library. The protocol itself, protocol & model abstraction, synchronous / asynchronous marshalling
-- **[tuic-quinn](https://github.com/EAimTY/tuic/tree/dev/tuic-quinn)** - Library. A thin layer on top of [quinn](https://github.com/quinn-rs/quinn) to provide functions of TUIC
-- **[tuic-server](https://github.com/EAimTY/tuic/tree/dev/tuic-server)** - Binary. Minimalistic TUIC server implementation as a reference
-- **[tuic-client](https://github.com/EAimTY/tuic/tree/dev/tuic-client)** - Binary. Minimalistic TUIC client implementation as a reference
+- **[tuic](https://github.com/Itsusinn/tuic/tree/dev/tuic)** - Library. The protocol itself, protocol & model abstraction, synchronous / asynchronous marshalling
+- **[tuic-quinn](https://github.com/Itsusinn/tuic/tree/dev/tuic-quinn)** - Library. A thin layer on top of [quinn](https://github.com/quinn-rs/quinn) to provide functions of TUIC
+- **[tuic-server](https://github.com/Itsusinn/tuic/tree/dev/tuic-server)** - Binary. Minimalistic TUIC server implementation as a reference
+- **[tuic-client](https://github.com/Itsusinn/tuic/tree/dev/tuic-client)** - Binary. Minimalistic TUIC client implementation as a reference
 
 ## License
 
-Code in this repository is licensed under [GNU General Public License v3.0](https://github.com/EAimTY/tuic/blob/dev/LICENSE)
+Code in this repository is licensed under [GNU General Public License v3.0](https://github.com/Itsusinn/tuic/blob/dev/LICENSE)
 
 However, the concept of the TUIC protocol is license-free. You can implement, modify, and redistribute the protocol without any restrictions, even for commercial use

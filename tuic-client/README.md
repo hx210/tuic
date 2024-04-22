@@ -3,7 +3,7 @@
 Minimalistic TUIC client implementation as a reference
 
 [![Version](https://img.shields.io/crates/v/tuic-client.svg?style=flat)](https://crates.io/crates/tuic-client)
-[![License](https://img.shields.io/crates/l/tuic-client.svg?style=flat)](https://github.com/EAimTY/tuic/blob/dev/LICENSE)
+[![License](https://img.shields.io/crates/l/tuic-client.svg?style=flat)](https://github.com/Itsusinn/tuic/blob/dev/LICENSE)
 
 # Overview
 
@@ -13,7 +13,7 @@ This implementation only contains the most basic requirements of a functional TU
 
 ## Usage
 
-Download the latest binary from [releases](https://github.com/EAimTY/tuic/releases).
+Download the latest binary from [releases](https://github.com/Itsusinn/tuic/releases).
 
 Or install from [crates.io](https://crates.io/crates/tuic-client):
 
@@ -122,7 +122,7 @@ tuic-client -c PATH/TO/CONFIG
 
         // Optional. Set the password for socks5 authentication
         "password": "PASSWORD",
-        
+
         // Optional. Set if the listening socket should be dual-stack
         // If this option is not set, the socket behavior is platform dependent
         "dual_stack": true,
