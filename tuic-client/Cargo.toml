@@ -14,7 +14,7 @@ repository = "https://github.com/EAimTY/tuic"
 [dependencies]
 bytes = { version = "1", default-features = false, features = ["std"] }
 
-env_logger = { version = "0.10", default-features = false, features = ["humantime"] }
+env_logger = { version = "0.11", default-features = false, features = ["humantime"] }
 humantime = { version = "2", default-features = false }
 lexopt = { version = "0.3", default-features = false }
 log = { version = "0.4", default-features = false, features = ["serde", "std"] }
@@ -25,7 +25,7 @@ serde_json = { version = "1", default-features = false, features = ["std"] }
 socket2 = { version = "0.5", default-features = false }
 socks5-proto = { version = "0.3", default-features = false }
 socks5-server = { version = "0.8", default-features = false }
-thiserror = { version = "1", default-features = false }
+
 
 
 uuid = { version = "1", default-features = false, features = ["serde", "std"] }
@@ -47,3 +47,7 @@ tokio-util = { version = "0.7", default-features = false, features = ["compat"] 
 rustls = { version = "0.23", default-features = false }
 rustls-native-certs = { version = "0.7", default-features = false }
 rustls-pemfile = { version = "2", default-features = false }
+
+# Error-handling
+thiserror = { version = "1", default-features = false }
+anyhow = "1"

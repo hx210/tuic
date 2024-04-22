@@ -26,6 +26,8 @@ pub enum Error {
     WrongPacketSource,
     #[error("invalid socks5 authentication")]
     InvalidSocks5Auth,
+    #[error(transparent)]
+    Other(#[from] anyhow::Error),
 }
 
 impl From<ConnectionError> for Error {
