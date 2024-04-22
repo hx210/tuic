@@ -247,3 +247,10 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ghcr.io/${{ steps.get-ownername.outputs.OWNER }}/tuic-server:latest
+
+      - name: Delete all images from package without tags
+        uses: pcasteran/ghcr-cleaning-action@v1
+        with:
+          user: ${{ steps.get-ownername.outputs.OWNER }}
+          package: tuic-server
+          password: ${{ secrets.SECRET_PAT }}
