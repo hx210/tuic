@@ -1,44 +1,34 @@
-use rustls::{Certificate, PrivateKey};
-use rustls_pemfile::Item;
+use anyhow::Context;
+use rustls::pki_types::{CertificateDer, PrivateKeyDer, PrivatePkcs8KeyDer};
 use std::{
     fmt::{Display, Formatter, Result as FmtResult},
-    fs::{self, File},
-    io::{BufReader, Error as IoError},
-    path::PathBuf,
+    fs,
+    path::Path,
     str::FromStr,
 };
 
-pub fn load_certs(path: PathBuf) -> Result<Vec<Certificate>, IoError> {
-    let mut file = BufReader::new(File::open(&path)?);
-    let mut certs = Vec::new();
-
-    while let Ok(Some(item)) = rustls_pemfile::read_one(&mut file) {
-        if let Item::X509Certificate(cert) = item {
-            certs.push(Certificate(cert));
-        }
-    }
-
-    if certs.is_empty() {
-        certs = vec![Certificate(fs::read(&path)?)];
-    }
-
-    Ok(certs)
+pub fn load_cert_chain(cert_path: &Path) -> anyhow::Result<Vec<CertificateDer<'static>>> {
+    let cert_chain = fs::read(cert_path).context("failed to read certificate chain")?;
+    let cert_chain = if cert_path.extension().map_or(false, |x| x == "der") {
+        vec![CertificateDer::from(cert_chain)]
+    } else {
+        rustls_pemfile::certs(&mut &*cert_chain)
+            .collect::<Result<_, _>>()
+            .context("invalid PEM-encoded certificate")?
+    };
+    Ok(cert_chain)
 }
 
-pub fn load_priv_key(path: PathBuf) -> Result<PrivateKey, IoError> {
-    let mut file = BufReader::new(File::open(&path)?);
-    let mut priv_key = None;
-
-    while let Ok(Some(item)) = rustls_pemfile::read_one(&mut file) {
-        if let Item::RSAKey(key) | Item::PKCS8Key(key) | Item::ECKey(key) = item {
-            priv_key = Some(key);
-        }
-    }
-
-    priv_key
-        .map(Ok)
-        .unwrap_or_else(|| fs::read(&path))
-        .map(PrivateKey)
+pub fn load_priv_key(key_path: &Path) -> anyhow::Result<PrivateKeyDer<'static>> {
+    let key = fs::read(key_path).context("failed to read private key")?;
+    let key = if key_path.extension().map_or(false, |x| x == "der") {
+        PrivateKeyDer::Pkcs8(PrivatePkcs8KeyDer::from(key))
+    } else {
+        rustls_pemfile::private_key(&mut &*key)
+            .context("malformed PKCS #1 private key")?
+            .ok_or_else(|| anyhow::Error::msg("no private keys found"))?
+    };
+    Ok(key)
 }
 
 #[derive(Clone, Copy)]
