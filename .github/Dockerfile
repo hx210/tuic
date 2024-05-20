@@ -7,6 +7,7 @@ RUN apk add git gcc musl-dev
 COPY . /app/tuic
 
 WORKDIR /app/tuic
+ARG RUSTFLAGS="-Ctarget-feature=+sse2,+sse3,+avx"
 RUN cargo build --release --config net.git-fetch-with-cli=true --package tuic-server
 RUN cp ./target/release/tuic-server /usr/bin/tuic-server
 RUN chmod +x /usr/bin/tuic-server
