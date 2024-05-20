@@ -1,0 +1,305 @@
+name: Build/Test/Release
+
+on:
+  push:
+    tags: [ "v*" ]
+    branches: [ "dev" ]
+  pull_request:
+    branches: [ "dev" ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  PACKAGE: "tuic-server"
+  PACKAGE2: "tuic-client"
+jobs:
+  compile:
+    name: ${{ matrix.release-name || matrix.target || 'Unknown' }}
+    permissions:
+      contents: write
+    runs-on: ${{ matrix.os || 'ubuntu-latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Example
+          # when not set, default will be used (except target, cross)
+          # - os: ubuntu-latest
+          #   target: x86_64-unknown-linux-gnu
+          #   release-name: x86_64-linux
+          #   toolchain: stable
+          #   cross: true
+          #   postfix: ""
+          #   extra-args: ""
+          #   components: ""
+          #   rustflags: ""
+
+          # Linux x86
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            release-name: x86_64-linux
+            cross: true
+            rustflags: "-Ctarget-feature=+sse2,+sse3,+avx"
+          - os: ubuntu-latest
+            target: i686-unknown-linux-gnu
+            release-name: i686-linux
+            cross: true
+          # Linux x86 musl
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            release-name: x86_64-linux-musl
+            cross: true
+            rustflags: "-Ctarget-feature=+sse2,+sse3,+avx"
+          - os: ubuntu-latest
+            target: i686-unknown-linux-musl
+            release-name: i686-linux-musl
+            cross: true
+          # Linux arm
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            release-name: aarch64-linux
+            cross: true
+          - os: ubuntu-latest
+            target: armv7-unknown-linux-gnueabi
+            release-name: armv7-linux
+            cross: true
+          - os: ubuntu-latest
+            target: armv7-unknown-linux-gnueabihf
+            release-name: armv7-linux-hf
+            cross: true
+          # Linux arm musl
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-musl
+            release-name: aarch64-linux-musl
+            cross: true
+          - os: ubuntu-latest
+            target: armv7-unknown-linux-musleabi
+            release-name: armv7-linux-musl
+            cross: true
+          - os: ubuntu-latest
+            target: armv7-unknown-linux-musleabihf
+            release-name: armv7-linux-muslhf
+            cross: true
+          # Windows
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            release-name: x86_64-windows
+            cross: false
+            postfix: ".exe"
+            rustflags: "-Ctarget-feature=+sse2,+sse3,+avx"
+          - os: windows-latest
+            target: i686-pc-windows-msvc
+            release-name: i686-windows
+            cross: false
+            postfix: ".exe"
+
+          # MacOSX
+          - os: macos-12
+            target: x86_64-apple-darwin
+            release-name: x86_64-darwin
+            cross: false
+            rustflags: "-Ctarget-feature=+sse2,+sse3,+avx"
+          - os: macos-14
+            target: aarch64-apple-darwin
+            release-name: aarch64-darwin
+            cross: false
+
+          # FreeBSD
+          - os: ubuntu-latest
+            target: x86_64-unknown-freebsd
+            release-name: x86_64-freebsd
+            cross: true
+            rustflags: "-Ctarget-feature=+sse2,+sse3,+avx"
+
+          # RISC-V
+          - os: ubuntu-latest
+            target: riscv64gc-unknown-linux-gnu
+            release-name: riscv64gc-linux
+            cross: true
+
+          # Loongarch64
+          - os: ubuntu-latest
+            target: loongarch64-unknown-linux-gnu
+            release-name: loongarch64-linux
+            cross: true
+
+          # Linux mips: tier-3, pity
+          # Windows gnu: tokio dont work
+          # Windows aarch: todo
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ matrix.release-name || matrix.target }}-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: |
+            ${{ matrix.release-name || matrix.target }}
+
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain || 'stable' }}
+          target: ${{ matrix.target }}
+          components: ${{ matrix.components || 'rustfmt, clippy' }}
+
+      - name: Cargo fmt
+        uses: clechasseur/rs-cargo@v2
+        with:
+          use-cross: ${{ matrix.cross }}
+          command: fmt
+          args: --all -- --check
+
+      - name: Cargo clippy
+        uses: clechasseur/rs-cargo@v2
+        with:
+          use-cross: ${{ matrix.cross }}
+          command: clippy
+          args: --all --target ${{ matrix.target }} ${{ matrix.extra-args }} -- -D warnings
+        env:
+          RUSTFLAGS: ${{ matrix.rustflags }}
+
+      - name: Cargo test
+        uses: clechasseur/rs-cargo@v2
+        with:
+          use-cross: ${{ matrix.cross }}
+          command: test
+          args: --all --target ${{ matrix.target }} ${{ matrix.extra-args }}
+        env:
+          CROSS_CONTAINER_OPTS: "--network host"
+          RUSTFLAGS: ${{ matrix.rustflags }}
+
+      - name: Cargo build
+        uses: clechasseur/rs-cargo@v2
+        with:
+          use-cross: ${{ matrix.cross }}
+          command: build
+          args: --release --target ${{ matrix.target }} ${{ matrix.extra-args }}
+        env:
+          RUSTFLAGS: ${{ matrix.rustflags }}
+
+      - name: Rename binary
+        run: mv target/${{ matrix.target }}/release/${{ env.PACKAGE }}${{ matrix.postfix }} ${{ env.PACKAGE }}-${{ matrix.release-name || matrix.target }}${{ matrix.postfix }}
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.release-name || matrix.target }}
+          path: ${{ env.PACKAGE }}-${{ matrix.release-name || matrix.target }}${{ matrix.postfix }}
+
+      - name: Rename binary
+        run: mv target/${{ matrix.target }}/release/${{ env.PACKAGE2 }}${{ matrix.postfix }} ${{ env.PACKAGE2 }}-${{ matrix.release-name || matrix.target }}${{ matrix.postfix }}
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.release-name || matrix.target }}
+          path: ${{ env.PACKAGE2 }}-${{ matrix.release-name || matrix.target }}${{ matrix.postfix }}
+
+
+  release:
+    name: Release
+
+    needs: [compile]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Merge binaries
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: binaries
+          pattern: '*'
+          retention-days: 1
+
+      - name: Download binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: binaries
+          path: ./packages
+
+      - name: Github stable release
+        uses: "mathieucarbou/marvinpinto-action-automatic-releases@master"
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: false
+          files: |
+            packages/*
+            LICENSE
+
+      - name: Github nightly release
+        uses: "mathieucarbou/marvinpinto-action-automatic-releases@master"
+        if: startsWith(github.ref, 'refs/heads/master')
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: true
+          automatic_release_tag: "latest"
+          files: |
+            packages/*
+            LICENSE
+
+  docker:
+    name: Docker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Lowercase docker tag
+        id: get-ownername
+        run: |
+          echo "OWNER=${GITHUB_REPOSITORY_OWNER@L}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        if: startsWith(github.ref, 'refs/heads/master')
+        with:
+          context: .
+          file: .github/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ghcr.io/${{ steps.get-ownername.outputs.OWNER }}/tuic-server:latest
+
+      - name: Get the version tag
+        id: get-ver
+        if: startsWith(github.ref, 'refs/heads/v')
+        run: echo "TAG=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        if: startsWith(github.ref, 'refs/heads/v')
+        with:
+          context: .
+          file: .github/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ghcr.io/${{ steps.get-ownername.outputs.OWNER }}/tuic-server:${{ steps.get-ver.outputs.TAG }}
+
+      - name: Delete all images from package without tags
+        uses: pcasteran/ghcr-cleaning-action@v1
+        with:
+          user: ${{ steps.get-ownername.outputs.OWNER }}
+          package: tuic-server
+          password: ${{ secrets.SECRET_PAT }}
