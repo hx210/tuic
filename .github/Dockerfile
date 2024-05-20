@@ -10,7 +10,7 @@ WORKDIR /app/tuic
 
 RUN if [ "$DOCKER_PLATFORM" = "amd64" ]; then \
       echo "Setting RUSTFLAGS for x86_64" && \
-      export RUSTFLAGS="-Ctarget-feature=+sse2,+sse3,+avx" ; \
+      export RUSTFLAGS="-Ctarget-cpu=sandybridge" ; \
     else \
       export RUSTFLAGS="" ; \
     fi
