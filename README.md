@@ -4,8 +4,12 @@ Delicately-TUICed 0-RTT proxy protocol
 
 A fork of original TUIC repo https://github.com/EAimTY/tuic
 
-Maintain Only. No more new features but
-there would be bugfixes or performance improvements
+Compared to origin, this fork's new features:
+- In-tree [docker image builds](https://github.com/Itsusinn/tuic/pkgs/container/tuic-server)
+- Up-to-date dependencies
+- More relaxed locks
+- More CI targets via [cross-rs](https://github.com/cross-rs/cross)
+- By default SIMD instructions on x86_64 targets
 
 ## Introduction
 
