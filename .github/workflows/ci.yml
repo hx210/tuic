@@ -107,11 +107,11 @@ jobs:
             cross: false
 
           # FreeBSD
-          - os: ubuntu-latest
-            target: x86_64-unknown-freebsd
-            release-name: x86_64-freebsd
-            cross: true
-            rustflags: "-Ctarget-feature=+sse2,+sse3,+avx"
+          # - os: ubuntu-latest
+          #   target: x86_64-unknown-freebsd
+          #   release-name: x86_64-freebsd
+          #   cross: true
+          #   rustflags: "-Ctarget-feature=+sse2,+sse3,+avx"
 
           # RISC-V
           - os: ubuntu-latest
@@ -119,11 +119,11 @@ jobs:
             release-name: riscv64gc-linux
             cross: true
 
-          # Loongarch64
-          - os: ubuntu-latest
-            target: loongarch64-unknown-linux-gnu
-            release-name: loongarch64-linux
-            cross: true
+          # Loongarch64 ring problem
+          # - os: ubuntu-latest
+          #   target: loongarch64-unknown-linux-gnu
+          #   release-name: loongarch64-linux
+          #   cross: true
 
           # Linux mips: tier-3, pity
           # Windows gnu: tokio dont work
@@ -238,7 +238,7 @@ jobs:
 
       - name: Github nightly release
         uses: "mathieucarbou/marvinpinto-action-automatic-releases@master"
-        if: startsWith(github.ref, 'refs/heads/master')
+        if: startsWith(github.ref, 'refs/heads/dev')
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: true
@@ -275,7 +275,7 @@ jobs:
 
       - name: Build and push
         uses: docker/build-push-action@v5
-        if: startsWith(github.ref, 'refs/heads/master')
+        if: startsWith(github.ref, 'refs/heads/dev')
         with:
           context: .
           file: .github/Dockerfile
