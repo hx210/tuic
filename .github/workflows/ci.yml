@@ -190,7 +190,7 @@ jobs:
       - name: Upload binaries
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.release-name || matrix.target }}
+          name: ${{ matrix.release-name || matrix.target }}-${{ env.PACKAGE }}
           path: ${{ env.PACKAGE }}-${{ matrix.release-name || matrix.target }}${{ matrix.postfix }}
 
       - name: Rename binary
@@ -199,7 +199,7 @@ jobs:
       - name: Upload binaries
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.release-name || matrix.target }}
+          name: ${{ matrix.release-name || matrix.target }}-${{ env.PACKAGE2 }}
           path: ${{ env.PACKAGE2 }}-${{ matrix.release-name || matrix.target }}${{ matrix.postfix }}
 
 
