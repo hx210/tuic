@@ -2,6 +2,15 @@
 members = ["tuic", "tuic-quinn", "tuic-server", "tuic-client"]
 resolver = "2"
 
+[workspace.package]
+authors = ["EAimTY <ea.imty@gmail.com>"]
+version = "1.0.4"
+rust-version = "1.65.0"
+edition = "2021"
+readme = "README.md"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/EAimTY/tuic"
+
 [profile.release]
 opt-level = 3
 debug = 1
