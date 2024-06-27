@@ -62,7 +62,7 @@ impl Server {
                                 Address::SocketAddress(addr) => TuicAddress::SocketAddress(addr),
                             };
 
-                            match TuicConnection::get().await {
+                            match TuicConnection::get_conn().await {
                                 Ok(conn) => conn.packet(pkt, target_addr, assoc_id).await,
                                 Err(err) => Err(err),
                             }
@@ -101,7 +101,7 @@ impl Server {
                     .remove(&assoc_id)
                     .unwrap();
 
-                let res = match TuicConnection::get().await {
+                let res = match TuicConnection::get_conn().await {
                     Ok(conn) => conn.dissociate(assoc_id).await,
                     Err(err) => Err(err),
                 };
@@ -151,7 +151,7 @@ impl Server {
             Address::SocketAddress(addr) => TuicAddress::SocketAddress(addr),
         };
 
-        let relay = match TuicConnection::get().await {
+        let relay = match TuicConnection::get_conn().await {
             Ok(conn) => conn.connect(target_addr.clone()).await,
             Err(err) => Err(err),
         };
