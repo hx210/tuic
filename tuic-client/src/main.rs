@@ -32,7 +32,7 @@ async fn main() {
         .format_target(false)
         .init();
 
-    match Connection::set_config(cfg.relay) {
+    match Connection::set_config(cfg.relay).await {
         Ok(()) => {}
         Err(err) => {
             eprintln!("{err}");
