@@ -109,7 +109,11 @@ tuic-client -c PATH/TO/CONFIG
 
         // Optional. How long the server should keep a UDP packet fragment. Outdated fragments will be dropped
         // Default: 15s
-        "gc_lifetime": "15s"
+        "gc_lifetime": "15s",
+
+        // Optional. Whether the client should ignore correctness of the server certificate.
+        // Default: false
+        "skip_cert_verify": false
     },
 
     // Settings for the local inbound socks5 server
