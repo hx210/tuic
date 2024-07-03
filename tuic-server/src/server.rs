@@ -11,7 +11,10 @@ use quinn::{
     crypto::rustls::QuicServerConfig,
     Endpoint, EndpointConfig, IdleTimeout, ServerConfig, TokioRuntime, TransportConfig, VarInt,
 };
-use rustls::ServerConfig as RustlsServerConfig;
+use rustls::{
+    pki_types::{CertificateDer, PrivateKeyDer, PrivatePkcs8KeyDer},
+    ServerConfig as RustlsServerConfig,
+};
 use socket2::{Domain, Protocol, SockAddr, Socket, Type};
 use uuid::Uuid;
 
@@ -36,13 +39,21 @@ pub struct Server {
 
 impl Server {
     pub fn init(cfg: Config) -> Result<Self, Error> {
-        let certs = utils::load_cert_chain(&cfg.certificate)?;
-        let priv_key = utils::load_priv_key(&cfg.private_key)?;
-
-        let mut crypto =
-            RustlsServerConfig::builder_with_protocol_versions(&[&rustls::version::TLS13])
+        let mut crypto: RustlsServerConfig;
+        if cfg.self_sign {
+            let cert = rcgen::generate_simple_self_signed(vec!["localhost".into()]).unwrap();
+            let cert_der = CertificateDer::from(cert.cert);
+            let priv_key = PrivatePkcs8KeyDer::from(cert.key_pair.serialize_der());
+            crypto = RustlsServerConfig::builder_with_protocol_versions(&[&rustls::version::TLS13])
+                .with_no_client_auth()
+                .with_single_cert(vec![cert_der], PrivateKeyDer::Pkcs8(priv_key))?;
+        } else {
+            let certs = utils::load_cert_chain(&cfg.certificate)?;
+            let priv_key = utils::load_priv_key(&cfg.private_key)?;
+            crypto = RustlsServerConfig::builder_with_protocol_versions(&[&rustls::version::TLS13])
                 .with_no_client_auth()
                 .with_single_cert(certs, priv_key)?;
+        }
 
         crypto.alpn_protocols = cfg.alpn;
         // TODO only set when 0-RTT enabled
