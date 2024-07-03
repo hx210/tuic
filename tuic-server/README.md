@@ -53,11 +53,15 @@ replace <tag> with [current version tag](https://github.com/Itsusinn/tuic/pkgs/c
         "00000000-0000-0000-0000-000000000000": "PASSWORD_0",
         "00000000-0000-0000-0000-000000000001": "PASSWORD_1"
     },
+    // Optional. Whether use auto-generated self-signed certificate and key.
+    // When enabled, the follwing `certificate` and `private_key` fields will be ignored.
+    // Default: false.
+    "self_sign": false,
 
-    // The path to the certificate file
+    // Optional. The path to the certificate file
     "certificate": "PATH/TO/CERTIFICATE",
 
-    // The path to the private key file
+    // Optional. The path to the private key file
     "private_key": "PATH/TO/PRIVATE_KEY",
 
     // Optional. Congestion control algorithm, available options:

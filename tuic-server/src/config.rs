@@ -30,8 +30,13 @@ pub struct Config {
     #[serde(deserialize_with = "deserialize_users")]
     pub users: HashMap<Uuid, Box<[u8]>>,
 
+    #[serde(default = "default::self_sign")]
+    pub self_sign: bool,
+
+    #[serde(default = "default::certificate")]
     pub certificate: PathBuf,
 
+    #[serde(default = "default::private_key")]
     pub private_key: PathBuf,
 
     #[serde(
@@ -126,7 +131,7 @@ impl Config {
 }
 
 mod default {
-    use std::time::Duration;
+    use std::{path::PathBuf, time::Duration};
 
     use log::LevelFilter;
 
@@ -182,6 +187,18 @@ mod default {
 
     pub fn log_level() -> LevelFilter {
         LevelFilter::Warn
+    }
+
+    pub fn certificate() -> PathBuf {
+        PathBuf::new()
+    }
+
+    pub fn private_key() -> PathBuf {
+        PathBuf::new()
+    }
+
+    pub fn self_sign() -> bool {
+        false
     }
 }
 
