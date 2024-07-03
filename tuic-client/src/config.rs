@@ -110,6 +110,9 @@ pub struct Relay {
         deserialize_with = "deserialize_duration"
     )]
     pub gc_lifetime: Duration,
+
+    #[serde(default = "default::relay::skip_cert_verify")]
+    pub skip_cert_verify: bool,
 }
 
 #[derive(Deserialize)]
@@ -217,6 +220,9 @@ mod default {
 
         pub fn gc_lifetime() -> Duration {
             Duration::from_secs(15)
+        }
+        pub fn skip_cert_verify() -> bool {
+            false
         }
     }
 

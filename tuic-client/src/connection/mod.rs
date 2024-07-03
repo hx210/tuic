@@ -13,7 +13,10 @@ use quinn::{
     TokioRuntime, TransportConfig, VarInt, ZeroRttAccepted,
 };
 use register_count::Counter;
-use rustls::ClientConfig as RustlsClientConfig;
+use rustls::{
+    pki_types::{CertificateDer, ServerName, UnixTime},
+    ClientConfig as RustlsClientConfig,
+};
 use std::{
     net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, UdpSocket},
     sync::{atomic::AtomicU32, Arc},
@@ -52,10 +55,72 @@ impl Connection {
     pub async fn set_config(cfg: Relay) -> Result<(), Error> {
         let certs = utils::load_certs(cfg.certificates, cfg.disable_native_certs)?;
 
-        let mut crypto =
+        let mut crypto = if cfg.skip_cert_verify {
+            #[derive(Debug)]
+            struct SkipServerVerification(Arc<rustls::crypto::CryptoProvider>);
+
+            impl SkipServerVerification {
+                fn new() -> Arc<Self> {
+                    Arc::new(Self(Arc::new(rustls::crypto::ring::default_provider())))
+                }
+            }
+
+            impl rustls::client::danger::ServerCertVerifier for SkipServerVerification {
+                fn verify_server_cert(
+                    &self,
+                    _end_entity: &CertificateDer<'_>,
+                    _intermediates: &[CertificateDer<'_>],
+                    _server_name: &ServerName<'_>,
+                    _ocsp: &[u8],
+                    _now: UnixTime,
+                ) -> Result<rustls::client::danger::ServerCertVerified, rustls::Error>
+                {
+                    Ok(rustls::client::danger::ServerCertVerified::assertion())
+                }
+
+                fn verify_tls12_signature(
+                    &self,
+                    message: &[u8],
+                    cert: &CertificateDer<'_>,
+                    dss: &rustls::DigitallySignedStruct,
+                ) -> Result<rustls::client::danger::HandshakeSignatureValid, rustls::Error>
+                {
+                    rustls::crypto::verify_tls12_signature(
+                        message,
+                        cert,
+                        dss,
+                        &self.0.signature_verification_algorithms,
+                    )
+                }
+
+                fn verify_tls13_signature(
+                    &self,
+                    message: &[u8],
+                    cert: &CertificateDer<'_>,
+                    dss: &rustls::DigitallySignedStruct,
+                ) -> Result<rustls::client::danger::HandshakeSignatureValid, rustls::Error>
+                {
+                    rustls::crypto::verify_tls13_signature(
+                        message,
+                        cert,
+                        dss,
+                        &self.0.signature_verification_algorithms,
+                    )
+                }
+
+                fn supported_verify_schemes(&self) -> Vec<rustls::SignatureScheme> {
+                    self.0.signature_verification_algorithms.supported_schemes()
+                }
+            }
+            RustlsClientConfig::builder()
+                .dangerous()
+                .with_custom_certificate_verifier(SkipServerVerification::new())
+                .with_no_client_auth()
+        } else {
             RustlsClientConfig::builder_with_protocol_versions(&[&rustls::version::TLS13])
                 .with_root_certificates(certs)
-                .with_no_client_auth();
+                .with_no_client_auth()
+        };
 
         crypto.alpn_protocols = cfg.alpn;
         crypto.enable_early_data = true;
@@ -87,7 +152,6 @@ impl Connection {
 
         config.transport_config(Arc::new(tp_cfg));
 
-        // Try to create an IPv4 socket as the placeholder first, if it fails, try IPv6.
         let server = ServerAddr::new(cfg.server.0, cfg.server.1, cfg.ip);
         let server_ip: Option<IpAddr> = match server.resolve().await?.next() {
             Some(SocketAddr::V4(v4)) => Some(v4.ip().to_owned().into()),
