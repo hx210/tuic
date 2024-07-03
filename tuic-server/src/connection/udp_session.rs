@@ -1,18 +1,22 @@
-use super::Connection;
-use crate::error::Error;
-use bytes::Bytes;
-use socket2::{Domain, Protocol, SockAddr, Socket, Type};
 use std::{
     io::Error as IoError,
     net::{Ipv4Addr, Ipv6Addr, SocketAddr, UdpSocket as StdUdpSocket},
     sync::Arc,
 };
-use tokio::sync::RwLock as AsyncRwLock;
+
+use bytes::Bytes;
+use socket2::{Domain, Protocol, SockAddr, Socket, Type};
 use tokio::{
     net::UdpSocket,
-    sync::oneshot::{self, Sender},
+    sync::{
+        oneshot::{self, Sender},
+        RwLock as AsyncRwLock,
+    },
 };
 use tuic::Address;
+
+use super::Connection;
+use crate::error::Error;
 
 #[derive(Clone)]
 pub struct UdpSession(Arc<UdpSessionInner>);
@@ -99,7 +103,8 @@ impl UdpSession {
                     Ok(res) => res,
                     Err(err) => {
                         log::warn!(
-                            "[{id:#010x}] [{addr}] [{user}] [packet] [{assoc_id:#06x}] outbound listening error: {err}",
+                            "[{id:#010x}] [{addr}] [{user}] [packet] [{assoc_id:#06x}] outbound \
+                             listening error: {err}",
                             id = session_listening.0.conn.id(),
                             addr = session_listening.0.conn.inner.remote_address(),
                             user = session_listening.0.conn.auth,

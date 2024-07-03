@@ -1,9 +1,10 @@
-use crate::{
-    config::Config,
-    connection::{Connection, DEFAULT_CONCURRENT_STREAMS},
-    error::Error,
-    utils::{self, CongestionControl},
+use std::{
+    collections::HashMap,
+    net::{SocketAddr, UdpSocket as StdUdpSocket},
+    sync::Arc,
+    time::Duration,
 };
+
 use anyhow::Context;
 use quinn::{
     congestion::{BbrConfig, CubicConfig, NewRenoConfig},
@@ -12,13 +13,14 @@ use quinn::{
 };
 use rustls::ServerConfig as RustlsServerConfig;
 use socket2::{Domain, Protocol, SockAddr, Socket, Type};
-use std::{
-    collections::HashMap,
-    net::{SocketAddr, UdpSocket as StdUdpSocket},
-    sync::Arc,
-    time::Duration,
-};
 use uuid::Uuid;
+
+use crate::{
+    config::Config,
+    connection::{Connection, DEFAULT_CONCURRENT_STREAMS},
+    error::Error,
+    utils::{self, CongestionControl},
+};
 
 pub struct Server {
     ep: Endpoint,

@@ -1,7 +1,9 @@
+use std::fmt::{Debug, Formatter, Result as FmtResult};
+
+use uuid::Uuid;
+
 use super::side::{self, Side};
 use crate::{Authenticate as AuthenticateHeader, Header};
-use std::fmt::{Debug, Formatter, Result as FmtResult};
-use uuid::Uuid;
 
 /// The model of the `Authenticate` command
 pub struct Authenticate<M> {

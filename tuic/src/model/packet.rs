@@ -1,15 +1,17 @@
-use super::{
-    side::{self, Side},
-    Assemblable, AssembleError, UdpSessions,
-};
-use crate::{Address, Header, Packet as PacketHeader};
-use parking_lot::Mutex;
 use std::{
     fmt::{Debug, Formatter, Result as FmtResult},
     marker::PhantomData,
     slice,
     sync::Arc,
 };
+
+use parking_lot::Mutex;
+
+use super::{
+    side::{self, Side},
+    Assemblable, AssembleError, UdpSessions,
+};
+use crate::{Address, Header, Packet as PacketHeader};
 
 pub struct Packet<M, B> {
     inner: Side<Tx, Rx<B>>,
@@ -123,7 +125,8 @@ where
         }
     }
 
-    /// Reassembles the packet. If the packet is not complete yet, `None` is returned.
+    /// Reassembles the packet. If the packet is not complete yet, `None` is
+    /// returned.
     pub fn assemble(self, data: B) -> Result<Option<Assemblable<B>>, AssembleError> {
         let Side::Rx(rx) = self.inner else {
             unreachable!()

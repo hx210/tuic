@@ -1,10 +1,12 @@
+use std::{env, process};
+
+use env_logger::Builder as LoggerBuilder;
+
 use crate::{
     config::{Config, ConfigError},
     connection::Connection,
     socks5::Server as Socks5Server,
 };
-use env_logger::Builder as LoggerBuilder;
-use std::{env, process};
 
 mod config;
 mod connection;

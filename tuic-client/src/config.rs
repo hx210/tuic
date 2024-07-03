@@ -1,9 +1,3 @@
-use crate::utils::{CongestionControl, UdpRelayMode};
-use humantime::Duration as HumanDuration;
-use lexopt::{Arg, Error as ArgumentError, Parser};
-use log::LevelFilter;
-use serde::{de::Error as DeError, Deserialize, Deserializer};
-use serde_json::Error as SerdeError;
 use std::{
     env::ArgsOs,
     fmt::Display,
@@ -15,8 +9,16 @@ use std::{
     sync::Arc,
     time::Duration,
 };
+
+use humantime::Duration as HumanDuration;
+use lexopt::{Arg, Error as ArgumentError, Parser};
+use log::LevelFilter;
+use serde::{de::Error as DeError, Deserialize, Deserializer};
+use serde_json::Error as SerdeError;
 use thiserror::Error;
 use uuid::Uuid;
+
+use crate::utils::{CongestionControl, UdpRelayMode};
 
 const HELP_MSG: &str = r#"
 Usage tuic-client [arguments]
@@ -147,7 +149,7 @@ impl Config {
                     }
                 }
                 Arg::Short('v') | Arg::Long("version") => {
-                    return Err(ConfigError::Version(env!("CARGO_PKG_VERSION")))
+                    return Err(ConfigError::Version(env!("CARGO_PKG_VERSION")));
                 }
                 Arg::Short('h') | Arg::Long("help") => return Err(ConfigError::Help(HELP_MSG)),
                 _ => return Err(ConfigError::Argument(arg.unexpected())),
@@ -167,8 +169,9 @@ mod default {
     use log::LevelFilter;
 
     pub mod relay {
-        use crate::utils::{CongestionControl, UdpRelayMode};
         use std::{path::PathBuf, time::Duration};
+
+        use crate::utils::{CongestionControl, UdpRelayMode};
 
         pub fn certificates() -> Vec<PathBuf> {
             Vec::new()

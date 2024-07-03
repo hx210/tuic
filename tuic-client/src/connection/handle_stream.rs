@@ -1,10 +1,12 @@
-use super::Connection;
-use crate::{error::Error, utils::UdpRelayMode};
+use std::sync::atomic::Ordering;
+
 use bytes::Bytes;
 use quinn::{RecvStream, SendStream, VarInt};
 use register_count::Register;
-use std::sync::atomic::Ordering;
 use tuic_quinn::Task;
+
+use super::Connection;
+use crate::{error::Error, utils::UdpRelayMode};
 
 impl Connection {
     pub async fn accept_uni_stream(&self) -> Result<(RecvStream, Register), Error> {

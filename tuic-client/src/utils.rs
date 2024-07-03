@@ -1,13 +1,15 @@
-use crate::error::Error;
-use anyhow::Context;
-use rustls::{pki_types::CertificateDer, RootCertStore};
 use std::{
     fs,
     net::{IpAddr, SocketAddr},
     path::PathBuf,
     str::FromStr,
 };
+
+use anyhow::Context;
+use rustls::{pki_types::CertificateDer, RootCertStore};
 use tokio::net;
+
+use crate::error::Error;
 
 pub fn load_certs(paths: Vec<PathBuf>, disable_native: bool) -> Result<RootCertStore, Error> {
     let mut certs = RootCertStore::empty();

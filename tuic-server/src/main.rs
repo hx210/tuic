@@ -1,9 +1,11 @@
+use std::{env, process};
+
+use env_logger::Builder as LoggerBuilder;
+
 use crate::{
     config::{Config, ConfigError},
     server::Server,
 };
-use env_logger::Builder as LoggerBuilder;
-use std::{env, process};
 
 mod config;
 mod connection;

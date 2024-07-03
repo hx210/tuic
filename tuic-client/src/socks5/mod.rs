@@ -1,10 +1,3 @@
-use crate::{config::Local, error::Error};
-use once_cell::sync::OnceCell;
-use socket2::{Domain, Protocol, SockAddr, Socket, Type};
-use socks5_server::{
-    auth::{NoAuth, Password},
-    Auth, Connection, Server as Socks5Server,
-};
 use std::{
     collections::HashMap,
     net::{SocketAddr, TcpListener as StdTcpListener},
@@ -13,8 +6,16 @@ use std::{
         Arc,
     },
 };
-use tokio::net::TcpListener;
-use tokio::sync::RwLock as AsyncRwLock;
+
+use once_cell::sync::OnceCell;
+use socket2::{Domain, Protocol, SockAddr, Socket, Type};
+use socks5_server::{
+    auth::{NoAuth, Password},
+    Auth, Connection, Server as Socks5Server,
+};
+use tokio::{net::TcpListener, sync::RwLock as AsyncRwLock};
+
+use crate::{config::Local, error::Error};
 
 mod handle_task;
 mod udp_session;

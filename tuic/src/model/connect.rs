@@ -1,7 +1,9 @@
+use std::fmt::{Debug, Formatter, Result as FmtResult};
+
+use register_count::Register;
+
 use super::side::{self, Side};
 use crate::{Address, Connect as ConnectHeader, Header};
-use register_count::Register;
-use std::fmt::{Debug, Formatter, Result as FmtResult};
 
 /// The model of the `Connect` command
 pub struct Connect<M> {

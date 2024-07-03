@@ -1,11 +1,13 @@
-use super::Connection;
-use crate::{error::Error, utils::UdpRelayMode};
+use std::sync::atomic::Ordering;
+
 use bytes::Bytes;
 use quinn::{RecvStream, SendStream, VarInt};
 use register_count::Register;
-use std::sync::atomic::Ordering;
 use tokio::time;
 use tuic_quinn::Task;
+
+use super::Connection;
+use crate::{error::Error, utils::UdpRelayMode};
 
 impl Connection {
     pub async fn handle_uni_stream(self, recv: RecvStream, _reg: Register) {
@@ -59,7 +61,8 @@ impl Connection {
             Ok(_) => unreachable!(), // already filtered in `tuic_quinn`
             Err(err) => {
                 log::warn!(
-                    "[{id:#010x}] [{addr}] [{user}] handling incoming unidirectional stream error: {err}",
+                    "[{id:#010x}] [{addr}] [{user}] handling incoming unidirectional stream \
+                     error: {err}",
                     id = self.id(),
                     addr = self.inner.remote_address(),
                     user = self.auth,
@@ -108,7 +111,8 @@ impl Connection {
             Ok(_) => unreachable!(), // already filtered in `tuic_quinn`
             Err(err) => {
                 log::warn!(
-                    "[{id:#010x}] [{addr}] [{user}] handling incoming bidirectional stream error: {err}",
+                    "[{id:#010x}] [{addr}] [{user}] handling incoming bidirectional stream error: \
+                     {err}",
                     id = self.id(),
                     addr = self.inner.remote_address(),
                     user = self.auth,

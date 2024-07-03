@@ -1,5 +1,3 @@
-use super::{udp_session::UdpSession, Server, UDP_SESSIONS};
-use crate::connection::{Connection as TuicConnection, ERROR_CODE};
 use socks5_proto::{Address, Reply};
 use socks5_server::{
     connection::{associate, bind, connect},
@@ -8,6 +6,9 @@ use socks5_server::{
 use tokio::io::{self, AsyncWriteExt};
 use tokio_util::compat::FuturesAsyncReadCompatExt;
 use tuic::Address as TuicAddress;
+
+use super::{udp_session::UdpSession, Server, UDP_SESSIONS};
+use crate::connection::{Connection as TuicConnection, ERROR_CODE};
 
 impl Server {
     pub async fn handle_associate(
@@ -32,7 +33,10 @@ impl Server {
                 {
                     Ok(assoc) => assoc,
                     Err(err) => {
-                        log::warn!("[socks5] [{peer_addr}] [associate] [{assoc_id:#06x}] command reply error: {err}");
+                        log::warn!(
+                            "[socks5] [{peer_addr}] [associate] [{assoc_id:#06x}] command reply \
+                             error: {err}"
+                        );
                         return;
                     }
                 };
@@ -49,7 +53,10 @@ impl Server {
                         let (pkt, target_addr) = match session.recv().await {
                             Ok(res) => res,
                             Err(err) => {
-                                log::warn!("[socks5] [{peer_addr}] [associate] [{assoc_id:#06x}] failed to receive UDP packet: {err}");
+                                log::warn!(
+                                    "[socks5] [{peer_addr}] [associate] [{assoc_id:#06x}] failed \
+                                     to receive UDP packet: {err}"
+                                );
                                 continue;
                             }
                         };
@@ -72,7 +79,10 @@ impl Server {
                             match forward.await {
                                 Ok(()) => {}
                                 Err(err) => {
-                                    log::warn!("[socks5] [{peer_addr}] [associate] [{assoc_id:#06x}] failed relaying UDP packet: {err}");
+                                    log::warn!(
+                                        "[socks5] [{peer_addr}] [associate] [{assoc_id:#06x}] \
+                                         failed relaying UDP packet: {err}"
+                                    );
                                 }
                             }
                         });
@@ -85,7 +95,10 @@ impl Server {
                 } {
                     Ok(()) => {}
                     Err(err) => {
-                        log::warn!("[socks5] [{peer_addr}] [associate] [{assoc_id:#06x}] associate connection error: {err}")
+                        log::warn!(
+                            "[socks5] [{peer_addr}] [associate] [{assoc_id:#06x}] associate \
+                             connection error: {err}"
+                        )
                     }
                 }
 
@@ -108,11 +121,17 @@ impl Server {
 
                 match res {
                     Ok(()) => {}
-                    Err(err) => log::warn!("[socks5] [{peer_addr}] [associate] [{assoc_id:#06x}] failed stopping UDP relaying session: {err}"),
+                    Err(err) => log::warn!(
+                        "[socks5] [{peer_addr}] [associate] [{assoc_id:#06x}] failed stopping UDP \
+                         relaying session: {err}"
+                    ),
                 }
             }
             Err(err) => {
-                log::warn!("[socks5] [{peer_addr}] [associate] [{assoc_id:#06x}] failed setting up UDP associate session: {err}");
+                log::warn!(
+                    "[socks5] [{peer_addr}] [associate] [{assoc_id:#06x}] failed setting up UDP \
+                     associate session: {err}"
+                );
 
                 match assoc
                     .reply(Reply::GeneralFailure, Address::unspecified())
@@ -122,7 +141,10 @@ impl Server {
                         let _ = assoc.shutdown().await;
                     }
                     Err(err) => {
-                        log::warn!("[socks5] [{peer_addr}] [associate] [{assoc_id:#06x}] command reply error: {err}")
+                        log::warn!(
+                            "[socks5] [{peer_addr}] [associate] [{assoc_id:#06x}] command reply \
+                             error: {err}"
+                        )
                     }
                 }
             }
@@ -166,17 +188,26 @@ impl Server {
                         Err(err) => {
                             let _ = conn.shutdown().await;
                             let _ = relay.get_mut().reset(ERROR_CODE);
-                            log::warn!("[socks5] [{peer_addr}] [connect] [{target_addr}] TCP stream relaying error: {err}");
+                            log::warn!(
+                                "[socks5] [{peer_addr}] [connect] [{target_addr}] TCP stream \
+                                 relaying error: {err}"
+                            );
                         }
                     },
                     Err(err) => {
                         let _ = relay.shutdown().await;
-                        log::warn!("[socks5] [{peer_addr}] [connect] [{target_addr}] command reply error: {err}");
+                        log::warn!(
+                            "[socks5] [{peer_addr}] [connect] [{target_addr}] command reply \
+                             error: {err}"
+                        );
                     }
                 }
             }
             Err(err) => {
-                log::warn!("[socks5] [{peer_addr}] [connect] [{target_addr}] unable to relay TCP stream: {err}");
+                log::warn!(
+                    "[socks5] [{peer_addr}] [connect] [{target_addr}] unable to relay TCP stream: \
+                     {err}"
+                );
 
                 match conn
                     .reply(Reply::GeneralFailure, Address::unspecified())
@@ -186,7 +217,10 @@ impl Server {
                         let _ = conn.shutdown().await;
                     }
                     Err(err) => {
-                        log::warn!("[socks5] [{peer_addr}] [connect] [{target_addr}] command reply error: {err}")
+                        log::warn!(
+                            "[socks5] [{peer_addr}] [connect] [{target_addr}] command reply \
+                             error: {err}"
+                        )
                     }
                 }
             }

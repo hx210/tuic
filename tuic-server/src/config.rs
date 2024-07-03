@@ -1,15 +1,17 @@
-use crate::utils::CongestionControl;
+use std::{
+    collections::HashMap, env::ArgsOs, fmt::Display, fs::File, io::Error as IoError,
+    net::SocketAddr, path::PathBuf, str::FromStr, time::Duration,
+};
+
 use humantime::Duration as HumanDuration;
 use lexopt::{Arg, Error as ArgumentError, Parser};
 use log::LevelFilter;
 use serde::{de::Error as DeError, Deserialize, Deserializer};
 use serde_json::Error as SerdeError;
-use std::{
-    collections::HashMap, env::ArgsOs, fmt::Display, fs::File, io::Error as IoError,
-    net::SocketAddr, path::PathBuf, str::FromStr, time::Duration,
-};
 use thiserror::Error;
 use uuid::Uuid;
+
+use crate::utils::CongestionControl;
 
 const HELP_MSG: &str = r#"
 Usage tuic-server [arguments]
@@ -107,7 +109,7 @@ impl Config {
                     }
                 }
                 Arg::Short('v') | Arg::Long("version") => {
-                    return Err(ConfigError::Version(env!("CARGO_PKG_VERSION")))
+                    return Err(ConfigError::Version(env!("CARGO_PKG_VERSION")));
                 }
                 Arg::Short('h') | Arg::Long("help") => return Err(ConfigError::Help(HELP_MSG)),
                 _ => return Err(ConfigError::Argument(arg.unexpected())),
@@ -124,9 +126,11 @@ impl Config {
 }
 
 mod default {
-    use crate::utils::CongestionControl;
-    use log::LevelFilter;
     use std::time::Duration;
+
+    use log::LevelFilter;
+
+    use crate::utils::CongestionControl;
 
     pub fn congestion_control() -> CongestionControl {
         CongestionControl::Cubic

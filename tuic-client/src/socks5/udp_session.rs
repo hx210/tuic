@@ -1,17 +1,18 @@
-use crate::error::Error;
-use bytes::Bytes;
-use once_cell::sync::OnceCell;
-use socket2::{Domain, Protocol, SockAddr, Socket, Type};
-use socks5_proto::Address;
-use socks5_server::AssociatedUdpSocket;
 use std::{
     collections::HashMap,
     io::{Error as IoError, ErrorKind},
     net::{IpAddr, SocketAddr, UdpSocket as StdUdpSocket},
     sync::Arc,
 };
-use tokio::net::UdpSocket;
-use tokio::sync::RwLock as AsyncRwLock;
+
+use bytes::Bytes;
+use once_cell::sync::OnceCell;
+use socket2::{Domain, Protocol, SockAddr, Socket, Type};
+use socks5_proto::Address;
+use socks5_server::AssociatedUdpSocket;
+use tokio::{net::UdpSocket, sync::RwLock as AsyncRwLock};
+
+use crate::error::Error;
 
 pub static UDP_SESSIONS: OnceCell<AsyncRwLock<HashMap<u16, UdpSession>>> = OnceCell::new();
 
@@ -76,7 +77,8 @@ impl UdpSession {
         let src_addr_display = src_addr.to_string();
 
         log::debug!(
-            "[socks5] [{ctrl_addr}] [associate] [{assoc_id:#06x}] send packet from {src_addr_display} to {dst_addr}",
+            "[socks5] [{ctrl_addr}] [associate] [{assoc_id:#06x}] send packet from \
+             {src_addr_display} to {dst_addr}",
             ctrl_addr = self.ctrl_addr,
             assoc_id = self.assoc_id,
             dst_addr = self.socket.peer_addr().unwrap(),
@@ -84,7 +86,8 @@ impl UdpSession {
 
         if let Err(err) = self.socket.send(pkt, 0, src_addr).await {
             log::warn!(
-                "[socks5] [{ctrl_addr}] [associate] [{assoc_id:#06x}] send packet from {src_addr_display} to {dst_addr} error: {err}",
+                "[socks5] [{ctrl_addr}] [associate] [{assoc_id:#06x}] send packet from \
+                 {src_addr_display} to {dst_addr} error: {err}",
                 ctrl_addr = self.ctrl_addr,
                 assoc_id = self.assoc_id,
                 dst_addr = self.socket.peer_addr().unwrap(),
@@ -138,7 +141,8 @@ impl UdpSession {
         }
 
         log::debug!(
-            "[socks5] [{ctrl_addr}] [associate] [{assoc_id:#06x}] receive packet from {src_addr} to {dst_addr}",
+            "[socks5] [{ctrl_addr}] [associate] [{assoc_id:#06x}] receive packet from {src_addr} \
+             to {dst_addr}",
             ctrl_addr = self.ctrl_addr,
             assoc_id = self.assoc_id
         );

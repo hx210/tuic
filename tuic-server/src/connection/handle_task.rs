@@ -1,11 +1,10 @@
-use super::{Connection, UdpSession, ERROR_CODE};
-use crate::{error::Error, utils::UdpRelayMode};
-use bytes::Bytes;
 use std::{
     collections::hash_map::Entry,
     io::{Error as IoError, ErrorKind},
     net::SocketAddr,
 };
+
+use bytes::Bytes;
 use tokio::{
     io::{self, AsyncWriteExt},
     net::{self, TcpStream},
@@ -13,6 +12,9 @@ use tokio::{
 use tokio_util::compat::FuturesAsyncReadCompatExt;
 use tuic::Address;
 use tuic_quinn::{Authenticate, Connect, Packet};
+
+use super::{Connection, UdpSession, ERROR_CODE};
+use crate::{error::Error, utils::UdpRelayMode};
 
 impl Connection {
     pub async fn handle_authenticate(&self, auth: Authenticate) {
@@ -86,7 +88,8 @@ impl Connection {
         let frag_total = pkt.frag_total();
 
         log::info!(
-            "[{id:#010x}] [{addr}] [{user}] [packet] [{assoc_id:#06x}] [from-{mode}] [{pkt_id:#06x}] fragment {frag_id}/{frag_total}",
+            "[{id:#010x}] [{addr}] [{user}] [packet] [{assoc_id:#06x}] [from-{mode}] \
+             [{pkt_id:#06x}] fragment {frag_id}/{frag_total}",
             id = self.id(),
             addr = self.inner.remote_address(),
             user = self.auth,
@@ -100,7 +103,8 @@ impl Connection {
             Ok(Some(res)) => res,
             Err(err) => {
                 log::warn!(
-                    "[{id:#010x}] [{addr}] [{user}] [packet] [{assoc_id:#06x}] [from-{mode}] [{pkt_id:#06x}] fragment {frag_id}/{frag_total}: {err}",
+                    "[{id:#010x}] [{addr}] [{user}] [packet] [{assoc_id:#06x}] [from-{mode}] \
+                     [{pkt_id:#06x}] fragment {frag_id}/{frag_total}: {err}",
                     id = self.id(),
                     addr = self.inner.remote_address(),
                     user = self.auth,
@@ -112,7 +116,8 @@ impl Connection {
 
         let process = async {
             log::info!(
-                "[{id:#010x}] [{addr}] [{user}] [packet] [{assoc_id:#06x}] [from-{mode}] [{pkt_id:#06x}] to {src_addr}",
+                "[{id:#010x}] [{addr}] [{user}] [packet] [{assoc_id:#06x}] [from-{mode}] \
+                 [{pkt_id:#06x}] to {src_addr}",
                 id = self.id(),
                 addr = self.inner.remote_address(),
                 user = self.auth,
@@ -151,7 +156,8 @@ impl Connection {
 
         if let Err(err) = process.await {
             log::warn!(
-                "[{id:#010x}] [{addr}] [{user}] [packet] [{assoc_id:#06x}] [from-{mode}] [{pkt_id:#06x}] to {src_addr}: {err}",
+                "[{id:#010x}] [{addr}] [{user}] [packet] [{assoc_id:#06x}] [from-{mode}] \
+                 [{pkt_id:#06x}] to {src_addr}: {err}",
                 id = self.id(),
                 addr = self.inner.remote_address(),
                 user = self.auth,
@@ -201,7 +207,8 @@ impl Connection {
 
         if let Err(err) = res {
             log::warn!(
-                "[{id:#010x}] [{addr}] [{user}] [packet] [{assoc_id:#06x}] [to-{mode}] from {src_addr}: {err}",
+                "[{id:#010x}] [{addr}] [{user}] [packet] [{assoc_id:#06x}] [to-{mode}] from \
+                 {src_addr}: {err}",
                 id = self.id(),
                 addr = self.inner.remote_address(),
                 user = self.auth,
