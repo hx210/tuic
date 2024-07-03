@@ -1,19 +1,19 @@
 #![doc = include_str!("../README.md")]
 
-use self::side::Side;
-use bytes::{BufMut, Bytes, BytesMut};
-use futures_util::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
-pub use quinn;
-use quinn::{
-    ClosedStream, Connection as QuinnConnection, ConnectionError, RecvStream, SendDatagramError,
-    SendStream, VarInt,
-};
 use std::{
     fmt::{Debug, Formatter, Result as FmtResult},
     io::{Cursor, Error as IoError},
     pin::Pin,
     task::{Context, Poll},
     time::Duration,
+};
+
+use bytes::{BufMut, Bytes, BytesMut};
+use futures_util::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
+pub use quinn;
+use quinn::{
+    ClosedStream, Connection as QuinnConnection, ConnectionError, RecvStream, SendDatagramError,
+    SendStream, VarInt,
 };
 use thiserror::Error;
 use tuic::{
@@ -26,6 +26,8 @@ use tuic::{
     Address, Header, UnmarshalError,
 };
 use uuid::Uuid;
+
+use self::side::Side;
 
 pub mod side {
     //! Side marker types for a connection.
@@ -43,7 +45,8 @@ pub mod side {
 
 /// The TUIC Connection.
 ///
-/// This struct takes a clone of `quinn::Connection` for performing TUIC operations.
+/// This struct takes a clone of `quinn::Connection` for performing TUIC
+/// operations.
 ///
 /// See more details about the TUIC protocol at [SPEC.md](https://github.com/EAimTY/tuic/blob/dev/tuic/SPEC.md)
 #[derive(Clone)]
@@ -106,7 +109,8 @@ impl<Side> Connection<Side> {
         self.model.task_associate_count()
     }
 
-    /// Removes packet fragments that can not be reassembled within the specified timeout
+    /// Removes packet fragments that can not be reassembled within the
+    /// specified timeout
     pub fn collect_garbage(&self, timeout: Duration) {
         self.model.collect_garbage(timeout);
     }
@@ -166,7 +170,8 @@ impl Connection<side::Client> {
 
     /// Try to parse a `quinn::RecvStream` as a TUIC command.
     ///
-    /// The `quinn::RecvStream` should be accepted by `quinn::Connection::accept_uni()` from the same `quinn::Connection`.
+    /// The `quinn::RecvStream` should be accepted by
+    /// `quinn::Connection::accept_uni()` from the same `quinn::Connection`.
     pub async fn accept_uni_stream(&self, mut recv: RecvStream) -> Result<Task, Error> {
         let header = match Header::async_unmarshal(&mut recv).await {
             Ok(header) => header,
@@ -191,9 +196,11 @@ impl Connection<side::Client> {
         }
     }
 
-    /// Try to parse a pair of `quinn::SendStream` and `quinn::RecvStream` as a TUIC command.
+    /// Try to parse a pair of `quinn::SendStream` and `quinn::RecvStream` as a
+    /// TUIC command.
     ///
-    /// The pair of stream should be accepted by `quinn::Connection::accept_bi()` from the same `quinn::Connection`.
+    /// The pair of stream should be accepted by
+    /// `quinn::Connection::accept_bi()` from the same `quinn::Connection`.
     pub async fn accept_bi_stream(
         &self,
         send: SendStream,
@@ -216,7 +223,8 @@ impl Connection<side::Client> {
 
     /// Try to parse a QUIC Datagram as a TUIC command.
     ///
-    /// The Datagram should be accepted by `quinn::Connection::read_datagram()` from the same `quinn::Connection`.
+    /// The Datagram should be accepted by `quinn::Connection::read_datagram()`
+    /// from the same `quinn::Connection`.
     pub fn accept_datagram(&self, dg: Bytes) -> Result<Task, Error> {
         let mut dg = Cursor::new(dg);
 
@@ -265,7 +273,8 @@ impl Connection<side::Server> {
 
     /// Try to parse a `quinn::RecvStream` as a TUIC command.
     ///
-    /// The `quinn::RecvStream` should be accepted by `quinn::Connection::accept_uni()` from the same `quinn::Connection`.
+    /// The `quinn::RecvStream` should be accepted by
+    /// `quinn::Connection::accept_uni()` from the same `quinn::Connection`.
     pub async fn accept_uni_stream(&self, mut recv: RecvStream) -> Result<Task, Error> {
         let header = match Header::async_unmarshal(&mut recv).await {
             Ok(header) => header,
@@ -294,9 +303,11 @@ impl Connection<side::Server> {
         }
     }
 
-    /// Try to parse a pair of `quinn::SendStream` and `quinn::RecvStream` as a TUIC command.
+    /// Try to parse a pair of `quinn::SendStream` and `quinn::RecvStream` as a
+    /// TUIC command.
     ///
-    /// The pair of stream should be accepted by `quinn::Connection::accept_bi()` from the same `quinn::Connection`.
+    /// The pair of stream should be accepted by
+    /// `quinn::Connection::accept_bi()` from the same `quinn::Connection`.
     pub async fn accept_bi_stream(
         &self,
         send: SendStream,
@@ -322,7 +333,8 @@ impl Connection<side::Server> {
 
     /// Try to parse a QUIC Datagram as a TUIC command.
     ///
-    /// The Datagram should be accepted by `quinn::Connection::read_datagram()` from the same `quinn::Connection`.
+    /// The Datagram should be accepted by `quinn::Connection::read_datagram()`
+    /// from the same `quinn::Connection`.
     pub fn accept_datagram(&self, dg: Bytes) -> Result<Task, Error> {
         let mut dg = Cursor::new(dg);
 
@@ -418,7 +430,9 @@ impl Connect {
         }
     }
 
-    /// Immediately closes the `Connect` streams with the given error code. Returns the result of closing the send and receive streams, respectively.
+    /// Immediately closes the `Connect` streams with the given error code.
+    /// Returns the result of closing the send and receive streams,
+    /// respectively.
     pub fn reset(
         &mut self,
         error_code: VarInt,
@@ -520,7 +534,8 @@ impl Packet {
         matches!(self.src, PacketSource::Native(_))
     }
 
-    /// Accepts the packet payload. If the packet is fragmented and not yet fully assembled, `Ok(None)` is returned.
+    /// Accepts the packet payload. If the packet is fragmented and not yet
+    /// fully assembled, `Ok(None)` is returned.
     pub async fn accept(self) -> Result<Option<(Bytes, Address, u16)>, Error> {
         let pkt = match self.src {
             PacketSource::Quic(mut recv) => {

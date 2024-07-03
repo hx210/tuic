@@ -1,12 +1,11 @@
-use crossbeam_utils::atomic::AtomicCell;
-
 use std::{
     fmt::{Display, Formatter, Result as FmtResult},
     ops::Deref,
     sync::Arc,
 };
-use tokio::sync::broadcast::Sender;
-use tokio::sync::RwLock as AsyncRwLock;
+
+use crossbeam_utils::atomic::AtomicCell;
+use tokio::sync::{broadcast::Sender, RwLock as AsyncRwLock};
 use uuid::Uuid;
 
 #[derive(Clone)]
@@ -45,13 +44,15 @@ impl Authenticated {
     pub fn get(&self) -> Option<Uuid> {
         self.0.uuid.load()
     }
+
     /// waiting for auth success
     pub async fn wait(&self) {
         let guard = self.0.tx.read().await;
         if let Some(tx) = guard.deref() {
             let mut rx = tx.subscribe();
             drop(guard);
-            // It will fail when 1. sender been dropped 2. channel buffer overflow(multi auth packet)
+            // It will fail when 1. sender been dropped 2. channel buffer overflow(multi
+            // auth packet)
             _ = rx.recv().await;
         }
         // If the sender already empty, that's meaning set had been invoked

@@ -1,6 +1,7 @@
+use std::fmt::{Debug, Formatter, Result as FmtResult};
+
 use super::side::{self, Side};
 use crate::{Header, Heartbeat as HeartbeatHeader};
-use std::fmt::{Debug, Formatter, Result as FmtResult};
 
 pub struct Heartbeat<M> {
     inner: Side<Tx, Rx>,

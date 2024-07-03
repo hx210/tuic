@@ -1,12 +1,14 @@
-use super::Connection;
-use crate::{error::Error, socks5::UDP_SESSIONS as SOCKS5_UDP_SESSIONS, utils::UdpRelayMode};
+use std::time::Duration;
+
 use bytes::Bytes;
 use quinn::ZeroRttAccepted;
 use socks5_proto::Address as Socks5Address;
-use std::time::Duration;
 use tokio::time;
 use tuic::Address;
 use tuic_quinn::{Connect, Packet};
+
+use super::Connection;
+use crate::{error::Error, socks5::UDP_SESSIONS as SOCKS5_UDP_SESSIONS, utils::UdpRelayMode};
 
 impl Connection {
     pub async fn authenticate(self, zero_rtt_accepted: Option<ZeroRttAccepted>) {
@@ -49,7 +51,10 @@ impl Connection {
                 match self.model.packet_native(pkt, addr, assoc_id) {
                     Ok(()) => Ok(()),
                     Err(err) => {
-                        log::warn!("[relay] [packet] [{assoc_id:#06x}] [to-native] to {addr_display}: {err}");
+                        log::warn!(
+                            "[relay] [packet] [{assoc_id:#06x}] [to-native] to {addr_display}: \
+                             {err}"
+                        );
                         Err(Error::Model(err))
                     }
                 }
@@ -112,14 +117,17 @@ impl Connection {
         };
 
         log::info!(
-            "[relay] [packet] [{assoc_id:#06x}] [from-{mode}] [{pkt_id:#06x}] fragment {frag_id}/{frag_total}",
+            "[relay] [packet] [{assoc_id:#06x}] [from-{mode}] [{pkt_id:#06x}] fragment \
+             {frag_id}/{frag_total}",
             frag_id = pkt.frag_id() + 1,
             frag_total = pkt.frag_total(),
         );
 
         match pkt.accept().await {
             Ok(Some((pkt, addr, _))) => {
-                log::info!("[relay] [packet] [{assoc_id:#06x}] [from-{mode}] [{pkt_id:#06x}] from {addr}");
+                log::info!(
+                    "[relay] [packet] [{assoc_id:#06x}] [from-{mode}] [{pkt_id:#06x}] from {addr}"
+                );
 
                 let addr = match addr {
                     Address::None => unreachable!(),
@@ -140,15 +148,22 @@ impl Connection {
                 if let Some(session) = session {
                     if let Err(err) = session.send(pkt, addr).await {
                         log::warn!(
-                            "[relay] [packet] [{assoc_id:#06x}] [from-native] [{pkt_id:#06x}] failed sending packet to socks5 client: {err}",
+                            "[relay] [packet] [{assoc_id:#06x}] [from-native] [{pkt_id:#06x}] \
+                             failed sending packet to socks5 client: {err}",
                         );
                     }
                 } else {
-                    log::warn!("[relay] [packet] [{assoc_id:#06x}] [from-native] [{pkt_id:#06x}] unable to find socks5 associate session");
+                    log::warn!(
+                        "[relay] [packet] [{assoc_id:#06x}] [from-native] [{pkt_id:#06x}] unable \
+                         to find socks5 associate session"
+                    );
                 }
             }
             Ok(None) => {}
-            Err(err) => log::warn!("[relay] [packet] [{assoc_id:#06x}] [from-native] [{pkt_id:#06x}] packet receiving error: {err}"),
+            Err(err) => log::warn!(
+                "[relay] [packet] [{assoc_id:#06x}] [from-native] [{pkt_id:#06x}] packet \
+                 receiving error: {err}"
+            ),
         }
     }
 }

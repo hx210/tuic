@@ -1,11 +1,12 @@
-use anyhow::Context;
-use rustls::pki_types::{CertificateDer, PrivateKeyDer, PrivatePkcs8KeyDer};
 use std::{
     fmt::{Display, Formatter, Result as FmtResult},
     fs,
     path::Path,
     str::FromStr,
 };
+
+use anyhow::Context;
+use rustls::pki_types::{CertificateDer, PrivateKeyDer, PrivatePkcs8KeyDer};
 
 pub fn load_cert_chain(cert_path: &Path) -> anyhow::Result<Vec<CertificateDer<'static>>> {
     let cert_chain = fs::read(cert_path).context("failed to read certificate chain")?;

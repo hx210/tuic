@@ -1,8 +1,9 @@
-use crate::{
-    config::Relay,
-    error::Error,
-    utils::{self, CongestionControl, ServerAddr, UdpRelayMode},
+use std::{
+    net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, UdpSocket},
+    sync::{atomic::AtomicU32, Arc},
+    time::Duration,
 };
+
 use anyhow::Context;
 use crossbeam_utils::atomic::AtomicCell;
 use once_cell::sync::OnceCell;
@@ -17,16 +18,18 @@ use rustls::{
     pki_types::{CertificateDer, ServerName, UnixTime},
     ClientConfig as RustlsClientConfig,
 };
-use std::{
-    net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, UdpSocket},
-    sync::{atomic::AtomicU32, Arc},
-    time::Duration,
+use tokio::{
+    sync::{OnceCell as AsyncOnceCell, RwLock as AsyncRwLock},
+    time,
 };
-use tokio::sync::RwLock as AsyncRwLock;
-use tokio::{sync::OnceCell as AsyncOnceCell, time};
-
 use tuic_quinn::{side, Connection as Model};
 use uuid::Uuid;
+
+use crate::{
+    config::Relay,
+    error::Error,
+    utils::{self, CongestionControl, ServerAddr, UdpRelayMode},
+};
 
 mod handle_stream;
 mod handle_task;
