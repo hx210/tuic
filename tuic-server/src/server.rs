@@ -146,24 +146,30 @@ impl Server {
         );
 
         loop {
-            let Some(conn) = self.ep.accept().await else {
-                return;
-            };
-            let Ok(conn) = conn.accept() else {
-                return;
-            };
-
-            tokio::spawn(Connection::handle(
-                conn,
-                self.users.clone(),
-                self.udp_relay_ipv6,
-                self.zero_rtt_handshake,
-                self.auth_timeout,
-                self.task_negotiation_timeout,
-                self.max_external_pkt_size,
-                self.gc_interval,
-                self.gc_lifetime,
-            ));
+            match self.ep.accept().await {
+                Some(conn) => match conn.accept() {
+                    Ok(conn) => {
+                        tokio::spawn(Connection::handle(
+                            conn,
+                            self.users.clone(),
+                            self.udp_relay_ipv6,
+                            self.zero_rtt_handshake,
+                            self.auth_timeout,
+                            self.task_negotiation_timeout,
+                            self.max_external_pkt_size,
+                            self.gc_interval,
+                            self.gc_lifetime,
+                        ));
+                    }
+                    Err(e) => {
+                        log::debug!("[Incoming] Failed to accept connection: {e}");
+                    }
+                },
+                None => {
+                    log::debug!("[Incoming] ep.accept() returned None.");
+                    return;
+                }
+            }
         }
     }
 }
