@@ -41,6 +41,9 @@ bytes = { version = "1", default-features = false, features = ["std"] }
 serde = { version = "1", default-features = false, features = ["derive", "std"] }
 serde_json = { version = "1", default-features = false, features = ["std"] }
 
+# Json_comments
+json_comments = "0.2"
+
 # Logging
 log = { version = "0.4", default-features = false, features = ["serde", "std"] }
 env_logger = { version = "0.11", default-features = false, features = ["humantime"] }
