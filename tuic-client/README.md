@@ -103,6 +103,24 @@ tuic-client -c PATH/TO/CONFIG
         // Default: 8MiB
         "receive_window": 8388608,
 
+        // Optional. The initial value to be used as the maximum UDP payload size before running MTU discovery
+        // Must be at least 1200
+        // Default: 1200
+        "initial_mtu": 1200,
+
+        // Optional. The maximum UDP payload size guaranteed to be supported by the network.
+        // Must be at least 1200
+        // Default: 1200
+        "min_mtu": 1200,
+
+        // Optional. Whether to use `Generic Segmentation Offload` to accelerate transmits, when supported by the environment.
+        // Default: true
+        "gso": true,
+
+        // Optional. Whether to enable Path MTU Discovery to optimize packet size for transmission.
+        // Default: true
+        "pmtu": true,
+
         // Optional. Interval between UDP packet fragment garbage collection
         // Default: 3s
         "gc_interval": "3s",
