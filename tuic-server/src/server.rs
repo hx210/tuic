@@ -72,7 +72,16 @@ impl Server {
             .stream_receive_window(VarInt::from_u32(cfg.receive_window))
             .max_idle_timeout(Some(
                 IdleTimeout::try_from(cfg.max_idle_time).map_err(|_| Error::InvalidMaxIdleTime)?,
-            ));
+            ))
+            .initial_mtu(cfg.initial_mtu)
+            .min_mtu(cfg.min_mtu);
+
+        if !cfg.gso {
+            tp_cfg.enable_segmentation_offload(false);
+        }
+        if !cfg.pmtu {
+            tp_cfg.mtu_discovery_config(None);
+        }
 
         match cfg.congestion_control {
             CongestionControl::Cubic => {
