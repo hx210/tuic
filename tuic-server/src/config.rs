@@ -1,14 +1,21 @@
 use std::{
-    collections::HashMap, env::ArgsOs, fmt::Display, fs::File, io::{BufReader, Error as IoError},
-    net::SocketAddr, path::PathBuf, str::FromStr, time::Duration,
+    collections::HashMap,
+    env::ArgsOs,
+    fmt::Display,
+    fs::File,
+    io::{BufReader, Error as IoError},
+    net::SocketAddr,
+    path::PathBuf,
+    str::FromStr,
+    time::Duration,
 };
 
 use humantime::Duration as HumanDuration;
+use json_comments::StripComments;
 use lexopt::{Arg, Error as ArgumentError, Parser};
 use log::LevelFilter;
 use serde::{de::Error as DeError, Deserialize, Deserializer};
 use serde_json::Error as SerdeError;
-use json_comments::StripComments;
 use thiserror::Error;
 use uuid::Uuid;
 
