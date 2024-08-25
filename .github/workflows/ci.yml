@@ -272,13 +272,8 @@ jobs:
       - name: Lowercase docker tag
         id: get-info
         run: |
-          echo "OWNER=${GITHUB_REPOSITORY_OWNER@L}" >> "$GITHUB_OUTPUT"
-          echo "VERSION=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
-          echo "TAG_VERSION=${REGISTRY}/${GITHUB_REPOSITORY_OWNER@L}/${IMAGE_NAME}:${VERSION}" >> $GITHUB_ENV
-          echo "TAG_LATEST=${REGISTRY}/${GITHUB_REPOSITORY_OWNER@L}/${IMAGE_NAME}:latest" >> $GITHUB_ENV
-        env:
-          REGISTRY: ghcr.io
-          IMAGE_NAME: tuic-server
+          echo "TAG_VERSION=ghcr.io/${GITHUB_REPOSITORY_OWNER@L}/tuic-server:${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+          echo "TAG_LATEST=ghcr.io/${GITHUB_REPOSITORY_OWNER@L}/tuic-server:latest" >> $GITHUB_ENV
 
       - name: Build and push
         uses: docker/build-push-action@v5

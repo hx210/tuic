@@ -863,7 +863,7 @@ dependencies = [
 
 [[package]]
 name = "tuic-client"
-version = "1.0.4"
+version = "1.1.0"
 dependencies = [
  "anyhow",
  "bytes",
@@ -906,7 +906,7 @@ dependencies = [
 
 [[package]]
 name = "tuic-server"
-version = "1.0.4"
+version = "1.1.0"
 dependencies = [
  "anyhow",
  "bytes",
