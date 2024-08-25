@@ -250,6 +250,7 @@ jobs:
   docker:
     name: Docker
     runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
     steps:
       - uses: actions/checkout@v4
         with:
@@ -269,37 +270,21 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Lowercase docker tag
-        id: get-ownername
+        id: get-info
         run: |
           echo "OWNER=${GITHUB_REPOSITORY_OWNER@L}" >> "$GITHUB_OUTPUT"
+          echo "VERSION=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+          echo "TAG_VERSION=${REGISTRY}/${GITHUB_REPOSITORY_OWNER@L}/${IMAGE_NAME}:${VERSION}" >> $GITHUB_ENV
+          echo "TAG_LATEST=${REGISTRY}/${GITHUB_REPOSITORY_OWNER@L}/${IMAGE_NAME}:latest" >> $GITHUB_ENV
+        env:
+          REGISTRY: ghcr.io
+          IMAGE_NAME: tuic-server
 
       - name: Build and push
         uses: docker/build-push-action@v5
-        if: startsWith(github.ref, 'refs/heads/dev')
         with:
           context: .
           file: .github/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/${{ steps.get-ownername.outputs.OWNER }}/tuic-server:latest
-
-      - name: Get the version tag
-        id: get-ver
-        if: startsWith(github.ref, 'refs/heads/v')
-        run: echo "TAG=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        if: startsWith(github.ref, 'refs/heads/v')
-        with:
-          context: .
-          file: .github/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ghcr.io/${{ steps.get-ownername.outputs.OWNER }}/tuic-server:${{ steps.get-ver.outputs.TAG }}
-
-      - name: Delete all images from package without tags
-        uses: pcasteran/ghcr-cleaning-action@v1
-        with:
-          user: ${{ steps.get-ownername.outputs.OWNER }}
-          package: tuic-server
-          password: ${{ secrets.SECRET_PAT }}
+          tags: ${{ env.TAG_VERSION }},${{ env.TAG_LATEST }}
