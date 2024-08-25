@@ -2,7 +2,7 @@ use std::{
     env::ArgsOs,
     fmt::Display,
     fs::File,
-    io::Error as IoError,
+    io::{BufReader, Error as IoError},
     net::{IpAddr, SocketAddr},
     path::PathBuf,
     str::FromStr,
@@ -15,6 +15,7 @@ use lexopt::{Arg, Error as ArgumentError, Parser};
 use log::LevelFilter;
 use serde::{de::Error as DeError, Deserialize, Deserializer};
 use serde_json::Error as SerdeError;
+use json_comments::StripComments;
 use thiserror::Error;
 use uuid::Uuid;
 
@@ -173,7 +174,9 @@ impl Config {
         }
 
         let file = File::open(path.unwrap())?;
-        Ok(serde_json::from_reader(file)?)
+        let reader = BufReader::new(file);
+        let stripped = StripComments::new(reader);
+        Ok(serde_json::from_reader(stripped)?)
     }
 }
 
