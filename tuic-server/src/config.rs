@@ -83,6 +83,18 @@ pub struct Config {
     #[serde(default = "default::receive_window")]
     pub receive_window: u32,
 
+    #[serde(default = "default::initial_mtu")]
+    pub initial_mtu: u16,
+
+    #[serde(default = "default::min_mtu")]
+    pub min_mtu: u16,
+
+    #[serde(default = "default::gso")]
+    pub gso: bool,
+
+    #[serde(default = "default::pmtu")]
+    pub pmtu: bool,
+
     #[serde(
         default = "default::gc_interval",
         deserialize_with = "deserialize_duration"
@@ -175,6 +187,28 @@ mod default {
 
     pub fn receive_window() -> u32 {
         8 * 1024 * 1024
+    }
+
+    // struct.TransportConfig#method.initial_mtu
+    pub fn initial_mtu() -> u16 {
+        1200
+    }
+
+    // struct.TransportConfig#method.min_mtu
+    pub fn min_mtu() -> u16 {
+        1200
+    }
+
+    // struct.TransportConfig#method.enable_segmentation_offload
+    // aka. Generic Segmentation Offload
+    pub fn gso() -> bool {
+        true
+    }
+
+    // struct.TransportConfig#method.mtu_discovery_config
+    // if not pmtu() -> mtu_discovery_config(None)
+    pub fn pmtu() -> bool {
+        true
     }
 
     pub fn gc_interval() -> Duration {

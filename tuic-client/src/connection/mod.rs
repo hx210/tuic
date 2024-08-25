@@ -139,7 +139,16 @@ impl Connection {
             .max_concurrent_uni_streams(VarInt::from(DEFAULT_CONCURRENT_STREAMS))
             .send_window(cfg.send_window)
             .stream_receive_window(VarInt::from_u32(cfg.receive_window))
-            .max_idle_timeout(None);
+            .max_idle_timeout(None)
+            .initial_mtu(cfg.initial_mtu)
+            .min_mtu(cfg.min_mtu);
+
+        if !cfg.gso {
+            tp_cfg.enable_segmentation_offload(false);
+        }
+        if !cfg.pmtu {
+            tp_cfg.mtu_discovery_config(None);
+        }
 
         match cfg.congestion_control {
             CongestionControl::Cubic => {
