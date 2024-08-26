@@ -46,6 +46,7 @@ impl Connection {
                     for addr in addrs {
                         match TcpStream::connect(addr).await {
                             Ok(s) => {
+                                s.set_nodelay(true)?;
                                 stream = Some(s);
                                 break;
                             }
@@ -132,12 +133,7 @@ impl Connection {
                 None => match self.udp_sessions.write().await.entry(assoc_id) {
                     Entry::Occupied(entry) => entry.get().clone(),
                     Entry::Vacant(entry) => {
-                        let session = UdpSession::new(
-                            self.clone(),
-                            assoc_id,
-                            self.udp_relay_ipv6,
-                            self.max_external_pkt_size,
-                        )?;
+                        let session = UdpSession::new(self.clone(), assoc_id, self.udp_relay_ipv6)?;
                         entry.insert(session.clone());
                         session
                     }
