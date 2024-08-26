@@ -100,8 +100,9 @@ replace <tag> with [current version tag](https://github.com/Itsusinn/tuic/pkgs/c
     "max_idle_time": "10s",
 
     // Optional. Maximum packet size the server can receive from outbound UDP sockets, in bytes
+    // ** Warning: This option is deprecated. **
     // Default: 1500
-    "max_external_packet_size": 1500,
+    // "max_external_packet_size": 1500,
 
     // Optional. Maximum number of bytes to transmit to a peer without acknowledgment
     // Should be set to at least the expected connection latency multiplied by the maximum desired throughput
