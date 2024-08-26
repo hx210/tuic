@@ -82,9 +82,8 @@ pub struct Config {
     )]
     pub max_idle_time: Duration,
 
-    #[serde(default = "default::max_external_packet_size")]
-    pub max_external_packet_size: usize,
-
+    // #[serde(default = "default::max_external_packet_size")]
+    // pub max_external_packet_size: usize,
     #[serde(default = "default::send_window")]
     pub send_window: u64,
 
@@ -187,9 +186,9 @@ mod default {
         Duration::from_secs(10)
     }
 
-    pub fn max_external_packet_size() -> usize {
-        1500
-    }
+    // pub fn max_external_packet_size() -> usize {
+    //     1500
+    // }
 
     pub fn send_window() -> u64 {
         8 * 1024 * 1024 * 2
