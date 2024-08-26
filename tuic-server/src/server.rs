@@ -32,7 +32,6 @@ pub struct Server {
     zero_rtt_handshake: bool,
     auth_timeout: Duration,
     task_negotiation_timeout: Duration,
-    max_external_pkt_size: usize,
     gc_interval: Duration,
     gc_lifetime: Duration,
 }
@@ -133,7 +132,6 @@ impl Server {
             zero_rtt_handshake: cfg.zero_rtt_handshake,
             auth_timeout: cfg.auth_timeout,
             task_negotiation_timeout: cfg.task_negotiation_timeout,
-            max_external_pkt_size: cfg.max_external_packet_size,
             gc_interval: cfg.gc_interval,
             gc_lifetime: cfg.gc_lifetime,
         })
@@ -156,7 +154,6 @@ impl Server {
                             self.zero_rtt_handshake,
                             self.auth_timeout,
                             self.task_negotiation_timeout,
-                            self.max_external_pkt_size,
                             self.gc_interval,
                             self.gc_lifetime,
                         ));

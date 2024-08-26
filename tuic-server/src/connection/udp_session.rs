@@ -4,7 +4,7 @@ use std::{
     sync::Arc,
 };
 
-use bytes::Bytes;
+use bytes::{Bytes, BytesMut};
 use socket2::{Domain, Protocol, SockAddr, Socket, Type};
 use tokio::{
     net::UdpSocket,
@@ -18,6 +18,8 @@ use tuic::Address;
 use super::Connection;
 use crate::error::Error;
 
+const MAX_UDP_PACKET_SIZE: usize = 65516;
+
 #[derive(Clone)]
 pub struct UdpSession(Arc<UdpSessionInner>);
 
@@ -26,17 +28,11 @@ struct UdpSessionInner {
     conn: Connection,
     socket_v4: UdpSocket,
     socket_v6: Option<UdpSocket>,
-    max_pkt_size: usize,
     close: AsyncRwLock<Option<Sender<()>>>,
 }
 
 impl UdpSession {
-    pub fn new(
-        conn: Connection,
-        assoc_id: u16,
-        udp_relay_ipv6: bool,
-        max_pkt_size: usize,
-    ) -> Result<Self, Error> {
+    pub fn new(conn: Connection, assoc_id: u16, udp_relay_ipv6: bool) -> Result<Self, Error> {
         let socket_v4 = {
             let socket = Socket::new(Domain::IPV4, Type::DGRAM, Some(Protocol::UDP))
                 .map_err(|err| Error::Socket("failed to create UDP associate IPv4 socket", err))?;
@@ -92,7 +88,6 @@ impl UdpSession {
             assoc_id,
             socket_v4,
             socket_v6,
-            max_pkt_size,
             close: AsyncRwLock::new(Some(tx)),
         }));
 
@@ -146,23 +141,31 @@ impl UdpSession {
     }
 
     async fn recv(&self) -> Result<(Bytes, SocketAddr), IoError> {
-        async fn recv(
-            socket: &UdpSocket,
-            max_pkt_size: usize,
-        ) -> Result<(Bytes, SocketAddr), IoError> {
-            let mut buf = vec![0u8; max_pkt_size];
+        async fn recv(socket: &UdpSocket) -> Result<(Bytes, SocketAddr), IoError> {
+            let mut buf = BytesMut::with_capacity(MAX_UDP_PACKET_SIZE);
+
+            // unsafe, but it's actually safe.
+            unsafe {
+                buf.set_len(MAX_UDP_PACKET_SIZE);
+            }
+
             let (n, addr) = socket.recv_from(&mut buf).await?;
-            buf.truncate(n);
-            Ok((Bytes::from(buf), addr))
+
+            unsafe {
+                buf.set_len(n);
+            }
+
+            // BytesMut to Bytes, cheap
+            Ok((buf.freeze(), addr))
         }
 
         if let Some(socket_v6) = &self.0.socket_v6 {
             tokio::select! {
-                res = recv(&self.0.socket_v4, self.0.max_pkt_size) => res,
-                res = recv(socket_v6, self.0.max_pkt_size) => res,
+                res = recv(&self.0.socket_v4) => res,
+                res = recv(socket_v6) => res,
             }
         } else {
-            recv(&self.0.socket_v4, self.0.max_pkt_size).await
+            recv(&self.0.socket_v4).await
         }
     }
 
