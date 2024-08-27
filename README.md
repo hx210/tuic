@@ -11,6 +11,7 @@ Compared to origin, this fork's new features:
 - More CI targets via [cross-rs](https://github.com/cross-rs/cross)
 - By default SIMD instructions on x86_64 targets
 - Self-signed cert and `skip_cert_verify` support
+- And [more...](https://github.com/EAimTY/tuic/compare/dev...Itsusinn:tuic:dev)
 
 ## Introduction
 
