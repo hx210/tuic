@@ -67,7 +67,7 @@ impl Connection {
                     addr = self.inner.remote_address(),
                     user = self.auth,
                 );
-                // self.close();
+                self.close();
             }
         }
     }
@@ -117,7 +117,7 @@ impl Connection {
                     addr = self.inner.remote_address(),
                     user = self.auth,
                 );
-                // self.close();
+                self.close();
             }
         }
     }
@@ -158,7 +158,7 @@ impl Connection {
                     addr = self.inner.remote_address(),
                     user = self.auth,
                 );
-                // self.close();
+                self.close();
             }
         }
     }
