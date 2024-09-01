@@ -32,6 +32,7 @@ pub struct Connection {
     task_negotiation_timeout: Duration,
     udp_sessions: Arc<AsyncRwLock<HashMap<u16, UdpSession>>>,
     udp_relay_mode: Arc<AtomicCell<Option<UdpRelayMode>>>,
+    max_external_pkt_size: usize,
     remote_uni_stream_cnt: Counter,
     remote_bi_stream_cnt: Counter,
     max_concurrent_uni_streams: Arc<AtomicU32>,
@@ -47,6 +48,7 @@ impl Connection {
         zero_rtt_handshake: bool,
         auth_timeout: Duration,
         task_negotiation_timeout: Duration,
+        max_external_pkt_size: usize,
         gc_interval: Duration,
         gc_lifetime: Duration,
     ) {
@@ -67,6 +69,7 @@ impl Connection {
                 users,
                 udp_relay_ipv6,
                 task_negotiation_timeout,
+                max_external_pkt_size,
             ))
         };
 
@@ -136,6 +139,7 @@ impl Connection {
         users: Arc<HashMap<Uuid, Box<[u8]>>>,
         udp_relay_ipv6: bool,
         task_negotiation_timeout: Duration,
+        max_external_pkt_size: usize,
     ) -> Self {
         Self {
             inner: conn.clone(),
@@ -146,6 +150,7 @@ impl Connection {
             task_negotiation_timeout,
             udp_sessions: Arc::new(AsyncRwLock::new(HashMap::new())),
             udp_relay_mode: Arc::new(AtomicCell::new(None)),
+            max_external_pkt_size,
             remote_uni_stream_cnt: Counter::new(),
             remote_bi_stream_cnt: Counter::new(),
             max_concurrent_uni_streams: Arc::new(AtomicU32::new(DEFAULT_CONCURRENT_STREAMS)),
