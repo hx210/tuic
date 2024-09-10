@@ -1,6 +1,9 @@
 use std::{
     collections::HashMap,
-    sync::{atomic::AtomicU32, Arc},
+    sync::{
+        atomic::{AtomicU32, Ordering},
+        Arc,
+    },
     time::Duration,
 };
 
@@ -8,11 +11,12 @@ use crossbeam_utils::atomic::AtomicCell;
 use quinn::{Connecting, Connection as QuinnConnection, VarInt};
 use register_count::Counter;
 use tokio::{sync::RwLock as AsyncRwLock, time};
+use tracing::{info, warn};
 use tuic_quinn::{side, Authenticate, Connection as Model};
 use uuid::Uuid;
 
 use self::{authenticated::Authenticated, udp_session::UdpSession};
-use crate::{error::Error, utils::UdpRelayMode};
+use crate::{error::Error, restful::ONLINE, utils::UdpRelayMode};
 
 mod authenticated;
 mod handle_stream;
@@ -75,7 +79,7 @@ impl Connection {
 
         match init.await {
             Ok(conn) => {
-                log::info!(
+                info!(
                     "[{id:#010x}] [{addr}] [{user}] connection established",
                     id = conn.id(),
                     user = conn.auth,
@@ -176,13 +180,21 @@ impl Connection {
     async fn timeout_authenticate(self, timeout: Duration) {
         time::sleep(timeout).await;
 
-        if self.auth.get().is_none() {
-            log::warn!(
-                "[{id:#010x}] [{addr}] [unauthenticated] [authenticate] timeout",
-                id = self.id(),
-                addr = self.inner.remote_address(),
-            );
-            self.close();
+        match self.auth.get() {
+            Some(uuid) => {
+                ONLINE
+                    .get(&uuid)
+                    .expect("Authorized UUID not present in users table")
+                    .fetch_add(1, Ordering::Release);
+            }
+            None => {
+                warn!(
+                    "[{id:#010x}] [{addr}] [unauthenticated] [authenticate] timeout",
+                    id = self.id(),
+                    addr = self.inner.remote_address(),
+                );
+                self.close();
+            }
         }
     }
 
@@ -191,6 +203,12 @@ impl Connection {
             time::sleep(gc_interval).await;
 
             if self.is_closed() {
+                if let Some(uuid) = self.auth.get() {
+                    ONLINE
+                        .get(&uuid)
+                        .expect("Authorized UUID not present in users table")
+                        .fetch_sub(1, Ordering::Release);
+                }
                 break;
             }
 

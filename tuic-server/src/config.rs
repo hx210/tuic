@@ -120,6 +120,8 @@ pub struct Config {
 
     #[serde(default = "default::log_level")]
     pub log_level: LevelFilter,
+
+    pub restful_server: Option<SocketAddr>,
 }
 
 impl Config {
