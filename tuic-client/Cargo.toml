@@ -32,7 +32,7 @@ json_comments = "0.2"
 uuid = { version = "1", default-features = false, features = ["serde", "std"] }
 
 # QUIC
-quinn = { version = "0.11", default-features = false, features = ["runtime-tokio", "rustls", "log", "lock_tracking"] }
+quinn = { version = "0.11", default-features = false, features = ["runtime-tokio", "rustls", "log"] }
 
 # TUIC
 tuic = { path = "../tuic", default-features = false }

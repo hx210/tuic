@@ -13,13 +13,14 @@ repository.workspace = true
 
 [dependencies]
 
+lateinit = "0.2"
 lexopt = { version = "0.3", default-features = false }
 socket2 = { version = "0.5", default-features = false }
 
 uuid = { version = "1", default-features = false, features = ["serde", "std"] }
 
 # QUIC
-quinn = { version = "0.11", default-features = false, features = ["runtime-tokio", "rustls", "log", "lock_tracking"] }
+quinn = { version = "0.11", default-features = false, features = ["runtime-tokio", "rustls", "log"] }
 
 # TUIC
 tuic = { path = "../tuic", default-features = false }
@@ -48,7 +49,12 @@ json_comments = "0.2"
 log = { version = "0.4", default-features = false, features = ["serde", "std"] }
 env_logger = { version = "0.11", default-features = false, features = ["humantime"] }
 humantime = { version = "2", default-features = false }
+tracing-subscriber = "0.3"
+tracing = "0.1"
 
 # Error handling
 thiserror = { version = "1", default-features = false }
 anyhow = "1"
+
+# Web
+axum = { version = "0.7", features = ["json", "tokio"] }

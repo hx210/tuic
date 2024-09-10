@@ -35,6 +35,7 @@ pub struct Server {
     max_external_pkt_size: usize,
     gc_interval: Duration,
     gc_lifetime: Duration,
+    restful: Option<SocketAddr>,
 }
 
 impl Server {
@@ -147,6 +148,7 @@ impl Server {
             max_external_pkt_size: cfg.max_external_packet_size,
             gc_interval: cfg.gc_interval,
             gc_lifetime: cfg.gc_lifetime,
+            restful: cfg.restful_server,
         })
     }
 
@@ -155,6 +157,9 @@ impl Server {
             "server started, listening on {}",
             self.ep.local_addr().unwrap()
         );
+        if let Some(restful) = self.restful {
+            tokio::spawn(crate::restful::start(restful, self.users.to_owned()));
+        }
 
         loop {
             match self.ep.accept().await {

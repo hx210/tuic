@@ -1,7 +1,5 @@
 use std::{env, process};
 
-use env_logger::Builder as LoggerBuilder;
-
 use crate::{
     config::{Config, ConfigError},
     server::Server,
@@ -10,6 +8,7 @@ use crate::{
 mod config;
 mod connection;
 mod error;
+mod restful;
 mod server;
 mod utils;
 
@@ -26,12 +25,7 @@ async fn main() {
             process::exit(1);
         }
     };
-
-    LoggerBuilder::new()
-        .filter_level(cfg.log_level)
-        .format_module_path(false)
-        .format_target(false)
-        .init();
+    tracing_subscriber::fmt::init();
 
     match Server::init(cfg) {
         Ok(server) => server.start().await,

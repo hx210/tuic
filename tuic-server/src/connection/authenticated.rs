@@ -1,12 +1,14 @@
 use std::{
     fmt::{Display, Formatter, Result as FmtResult},
     ops::Deref,
-    sync::Arc,
+    sync::{atomic::Ordering, Arc},
 };
 
 use crossbeam_utils::atomic::AtomicCell;
 use tokio::sync::{broadcast::Sender, RwLock as AsyncRwLock};
 use uuid::Uuid;
+
+use crate::restful::ONLINE;
 
 #[derive(Clone)]
 pub struct Authenticated(Arc<AuthenticatedInner>);
