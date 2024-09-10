@@ -143,10 +143,6 @@ replace <tag> with [current version tag](https://github.com/Itsusinn/tuic/pkgs/c
     // Default: 15s
     "gc_lifetime": "15s",
 
-    // Optional. Set the log level
-    // Default: "warn"
-    "log_level": "warn",
-
     // Optional.
     // The restful server socket address
     "restful_server": "[::]:8443"

@@ -14,6 +14,7 @@ repository.workspace = true
 [dependencies]
 
 lateinit = "0.2"
+
 lexopt = { version = "0.3", default-features = false }
 socket2 = { version = "0.5", default-features = false }
 
@@ -47,9 +48,10 @@ json_comments = "0.2"
 
 # Logging
 log = { version = "0.4", default-features = false, features = ["serde", "std"] }
-env_logger = { version = "0.11", default-features = false, features = ["humantime"] }
+time = { version = "0.3", features = ["macros", "local-offset"] }
 humantime = { version = "2", default-features = false }
-tracing-subscriber = "0.3"
+tracing-subscriber = { version = "0.3", default-features = false, features = ["tracing-log", "std", "local-time","fmt"] }
+chrono = "0.4"
 tracing = "0.1"
 
 # Error handling
