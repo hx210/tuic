@@ -13,7 +13,6 @@ use std::{
 use humantime::Duration as HumanDuration;
 use json_comments::StripComments;
 use lexopt::{Arg, Error as ArgumentError, Parser};
-use log::LevelFilter;
 use serde::{de::Error as DeError, Deserialize, Deserializer};
 use serde_json::Error as SerdeError;
 use thiserror::Error;
@@ -118,9 +117,6 @@ pub struct Config {
     )]
     pub gc_lifetime: Duration,
 
-    #[serde(default = "default::log_level")]
-    pub log_level: LevelFilter,
-
     pub restful_server: Option<SocketAddr>,
 }
 
@@ -159,8 +155,6 @@ impl Config {
 
 mod default {
     use std::{path::PathBuf, time::Duration};
-
-    use log::LevelFilter;
 
     use crate::utils::CongestionControl;
 
@@ -236,10 +230,6 @@ mod default {
 
     pub fn gc_lifetime() -> Duration {
         Duration::from_secs(15)
-    }
-
-    pub fn log_level() -> LevelFilter {
-        LevelFilter::Warn
     }
 
     pub fn certificate() -> PathBuf {
