@@ -4,7 +4,7 @@ use std::{
     time::Duration,
 };
 
-use crossbeam_utils::atomic::AtomicCell;
+use arc_swap::ArcSwap;
 use quinn::{Connecting, Connection as QuinnConnection, VarInt};
 use register_count::Counter;
 use tokio::{sync::RwLock as AsyncRwLock, time};
@@ -28,7 +28,7 @@ pub struct Connection {
     model: Model<side::Server>,
     auth: Authenticated,
     udp_sessions: Arc<AsyncRwLock<HashMap<u16, UdpSession>>>,
-    udp_relay_mode: Arc<AtomicCell<Option<UdpRelayMode>>>,
+    udp_relay_mode: Arc<ArcSwap<Option<UdpRelayMode>>>,
     remote_uni_stream_cnt: Counter,
     remote_bi_stream_cnt: Counter,
     max_concurrent_uni_streams: Arc<AtomicU32>,
@@ -120,7 +120,7 @@ impl Connection {
             model: Model::<side::Server>::new(conn),
             auth: Authenticated::new(),
             udp_sessions: Arc::new(AsyncRwLock::new(HashMap::new())),
-            udp_relay_mode: Arc::new(AtomicCell::new(None)),
+            udp_relay_mode: Arc::new(ArcSwap::new(None.into())),
             remote_uni_stream_cnt: Counter::new(),
             remote_bi_stream_cnt: Counter::new(),
             max_concurrent_uni_streams: Arc::new(AtomicU32::new(INIT_CONCURRENT_STREAMS)),

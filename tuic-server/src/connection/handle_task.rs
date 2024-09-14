@@ -97,7 +97,7 @@ impl Connection {
             frag_id = frag_id + 1,
         );
 
-        self.udp_relay_mode.store(Some(mode));
+        self.udp_relay_mode.store(Some(mode).into());
 
         let (pkt, addr, assoc_id) = match pkt.accept().await {
             Ok(None) => return,
