@@ -1606,7 +1606,6 @@ dependencies = [
  "json_comments",
  "lateinit",
  "lexopt",
- "log",
  "quinn",
  "rcgen",
  "register-count",

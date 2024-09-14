@@ -7,9 +7,8 @@ use figment::{
 };
 use json_comments::StripComments;
 use lexopt::{Arg, Parser};
-use log::warn;
 use serde::{Deserialize, Serialize};
-use tracing::level_filters::LevelFilter;
+use tracing::{level_filters::LevelFilter, warn};
 use uuid::Uuid;
 
 use crate::{

@@ -49,7 +49,6 @@ humantime-serde = "1"
 json_comments = "0.2"
 
 # Logging
-log = { version = "0.4", default-features = false, features = ["serde", "std"] }
 time = { version = "0.3", features = ["macros", "local-offset"] }
 humantime = { version = "2", default-features = false }
 tracing-subscriber = { version = "0.3", default-features = false, features = ["tracing-log", "std", "local-time","fmt"] }

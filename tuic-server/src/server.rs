@@ -14,6 +14,7 @@ use rustls::{
     ServerConfig as RustlsServerConfig,
 };
 use socket2::{Domain, Protocol, SockAddr, Socket, Type};
+use tracing::{debug, warn};
 
 use crate::{
     connection::{Connection, INIT_CONCURRENT_STREAMS},
@@ -131,7 +132,7 @@ impl Server {
     }
 
     pub async fn start(&self) {
-        log::warn!(
+        warn!(
             "server started, listening on {}",
             self.ep.local_addr().unwrap()
         );
@@ -146,11 +147,11 @@ impl Server {
                         tokio::spawn(Connection::handle(conn));
                     }
                     Err(e) => {
-                        log::debug!("[Incoming] Failed to accept connection: {e}");
+                        debug!("[Incoming] Failed to accept connection: {e}");
                     }
                 },
                 None => {
-                    log::debug!("[Incoming] ep.accept() returned None.");
+                    debug!("[Incoming] the endpoint is closed");
                     return;
                 }
             }
