@@ -1,307 +1,257 @@
-use std::{
-    collections::HashMap,
-    env::ArgsOs,
-    fmt::Display,
-    fs::File,
-    io::{BufReader, Error as IoError},
-    net::SocketAddr,
-    path::PathBuf,
-    str::FromStr,
-    time::Duration,
-};
+use std::{collections::HashMap, env::ArgsOs, net::SocketAddr, path::PathBuf, time::Duration};
 
-use humantime::Duration as HumanDuration;
+use educe::Educe;
+use figment::{
+    providers::{Format, Serialized, Toml},
+    Figment,
+};
 use json_comments::StripComments;
-use lexopt::{Arg, Error as ArgumentError, Parser};
-use serde::{de::Error as DeError, Deserialize, Deserializer};
-use serde_json::Error as SerdeError;
-use thiserror::Error;
+use lexopt::{Arg, Parser};
+use log::warn;
+use serde::{Deserialize, Serialize};
+use tracing::level_filters::LevelFilter;
 use uuid::Uuid;
 
-use crate::utils::CongestionControl;
+use crate::{
+    old_config::{ConfigError, OldConfig},
+    utils::CongestionController,
+};
 
-const HELP_MSG: &str = r#"
-Usage tuic-server [arguments]
-
-Arguments:
-    -c, --config <path>     Path to the config file (required)
-    -v, --version           Print the version
-    -h, --help              Print this help message
-"#;
-
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize, Educe)]
+#[educe(Default)]
 #[serde(deny_unknown_fields)]
 pub struct Config {
+    pub log_level: LogLevel,
+    #[educe(Default(expression = "[::]:443".parse().unwrap()))]
     pub server: SocketAddr,
+    pub users: HashMap<Uuid, String>,
+    pub tls: TlsConfig,
 
-    #[serde(deserialize_with = "deserialize_users")]
-    pub users: HashMap<Uuid, Box<[u8]>>,
+    #[educe(Default = None)]
+    pub restful: Option<RestfulConfig>,
 
-    #[serde(default = "default::self_sign")]
-    pub self_sign: bool,
+    pub quic: QuicConfig,
 
-    #[serde(default = "default::certificate")]
-    pub certificate: PathBuf,
-
-    #[serde(default = "default::private_key")]
-    pub private_key: PathBuf,
-
-    #[serde(
-        default = "default::congestion_control",
-        deserialize_with = "deserialize_from_str"
-    )]
-    pub congestion_control: CongestionControl,
-
-    #[serde(default = "default::alpn", deserialize_with = "deserialize_alpn")]
-    pub alpn: Vec<Vec<u8>>,
-
-    #[serde(default = "default::udp_relay_ipv6")]
+    #[educe(Default = true)]
     pub udp_relay_ipv6: bool,
 
-    #[serde(default = "default::zero_rtt_handshake")]
+    #[educe(Default = false)]
     pub zero_rtt_handshake: bool,
 
-    pub dual_stack: Option<bool>,
+    #[educe(Default = true)]
+    pub dual_stack: bool,
 
-    #[serde(
-        default = "default::auth_timeout",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(with = "humantime_serde")]
+    #[educe(Default(expression = Duration::from_millis(3000)))]
     pub auth_timeout: Duration,
 
-    #[serde(
-        default = "default::task_negotiation_timeout",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(with = "humantime_serde")]
+    #[educe(Default(expression = Duration::from_millis(3000)))]
     pub task_negotiation_timeout: Duration,
 
-    #[serde(
-        default = "default::max_idle_time",
-        deserialize_with = "deserialize_duration"
-    )]
-    pub max_idle_time: Duration,
-
-    #[serde(default = "default::max_external_packet_size")]
-    pub max_external_packet_size: usize,
-
-    #[serde(default = "default::initial_window")]
-    pub initial_window: Option<u64>,
-
-    #[serde(default = "default::send_window")]
-    pub send_window: u64,
-
-    #[serde(default = "default::receive_window")]
-    pub receive_window: u32,
-
-    #[serde(default = "default::initial_mtu")]
-    pub initial_mtu: u16,
-
-    #[serde(default = "default::min_mtu")]
-    pub min_mtu: u16,
-
-    #[serde(default = "default::gso")]
-    pub gso: bool,
-
-    #[serde(default = "default::pmtu")]
-    pub pmtu: bool,
-
-    #[serde(
-        default = "default::gc_interval",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(with = "humantime_serde")]
+    #[educe(Default(expression = Duration::from_millis(3000)))]
     pub gc_interval: Duration,
 
-    #[serde(
-        default = "default::gc_lifetime",
-        deserialize_with = "deserialize_duration"
-    )]
+    #[serde(with = "humantime_serde")]
+    #[educe(Default(expression = Duration::from_millis(15000)))]
     pub gc_lifetime: Duration,
 
-    pub restful_server: Option<SocketAddr>,
+    #[educe(Default = 1500)]
+    pub max_external_packet_size: usize,
+}
+
+#[derive(Deserialize, Serialize, Educe)]
+#[educe(Default)]
+#[serde(deny_unknown_fields)]
+pub struct TlsConfig {
+    pub self_sign: bool,
+    pub certificate: PathBuf,
+    pub private_key: PathBuf,
+    #[educe(Default(expression = vec!["h3".into()]))]
+    pub alpn: Vec<String>,
+}
+
+#[derive(Deserialize, Serialize, Educe)]
+#[educe(Default)]
+#[serde(deny_unknown_fields)]
+pub struct QuicConfig {
+    pub congestion_control: CongestionControlConfig,
+
+    #[educe(Default = 1200)]
+    pub initial_mtu: u16,
+
+    #[educe(Default = 1200)]
+    pub min_mtu: u16,
+
+    #[educe(Default = true)]
+    pub gso: bool,
+
+    #[educe(Default = true)]
+    pub pmtu: bool,
+
+    #[educe(Default = 16777216)]
+    pub send_window: u64,
+
+    #[educe(Default = 8388608)]
+    pub receive_window: u32,
+
+    #[serde(with = "humantime_serde")]
+    #[educe(Default(expression = Duration::from_millis(10000)))]
+    pub max_idle_time: Duration,
+}
+#[derive(Deserialize, Serialize, Educe)]
+#[educe(Default)]
+#[serde(deny_unknown_fields)]
+pub struct CongestionControlConfig {
+    pub controller: CongestionController,
+    #[educe(Default = 1048576)]
+    pub initial_window: u64,
+}
+
+#[derive(Deserialize, Serialize, Educe, Clone)]
+#[educe(Default)]
+#[serde(deny_unknown_fields)]
+pub struct RestfulConfig {
+    #[educe(Default(expression = "[::]:8443".parse().unwrap()))]
+    pub addr: SocketAddr,
+    #[educe(Default = "YOUR_SECRET_HERE")]
+    pub secret: String,
 }
 
 impl Config {
-    pub fn parse(args: ArgsOs) -> Result<Self, ConfigError> {
-        let mut parser = Parser::from_iter(args);
-        let mut path = None;
+    pub fn full_example() -> Self {
+        Self {
+            users: {
+                let mut users = HashMap::new();
+                users.insert(Uuid::new_v4(), "YOUR_USER_PASSWD_HERE".into());
+                users
+            },
+            restful: Some(RestfulConfig::default()),
+            ..Default::default()
+        }
+    }
+}
 
-        while let Some(arg) = parser.next()? {
-            match arg {
-                Arg::Short('c') | Arg::Long("config") => {
-                    if path.is_none() {
-                        path = Some(parser.value()?);
-                    } else {
-                        return Err(ConfigError::Argument(arg.unexpected()));
-                    }
+/// TODO remove in 2.0.0
+impl From<OldConfig> for Config {
+    fn from(value: OldConfig) -> Self {
+        Self {
+            server: value.server,
+            users: value.users,
+            tls: TlsConfig {
+                self_sign: value.self_sign,
+                certificate: value.certificate,
+                private_key: value.private_key,
+                alpn: value.alpn,
+            },
+            udp_relay_ipv6: value.udp_relay_ipv6,
+            zero_rtt_handshake: value.zero_rtt_handshake,
+            dual_stack: value.dual_stack.unwrap_or(true),
+            auth_timeout: value.auth_timeout,
+            task_negotiation_timeout: value.task_negotiation_timeout,
+            gc_interval: value.gc_interval,
+            gc_lifetime: value.gc_lifetime,
+            max_external_packet_size: value.max_external_packet_size,
+            restful: if value.restful_server.is_some() {
+                Some(RestfulConfig {
+                    addr: value.restful_server.unwrap(),
+                    ..Default::default()
+                })
+            } else {
+                None
+            },
+            log_level: value.log_level.unwrap_or_default(),
+            quic: QuicConfig {
+                congestion_control: CongestionControlConfig {
+                    controller: value.congestion_control,
+                    initial_window: value.initial_window.unwrap_or(1048576),
+                },
+                initial_mtu: value.initial_mtu,
+                min_mtu: value.min_mtu,
+                gso: value.gso,
+                pmtu: value.pmtu,
+                send_window: value.send_window,
+                receive_window: value.receive_window,
+                max_idle_time: value.max_idle_time,
+            },
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Copy, Debug)]
+#[serde(rename_all = "lowercase")]
+#[derive(Educe)]
+#[educe(Default)]
+pub enum LogLevel {
+    Trace,
+    Debug,
+    #[educe(Default)]
+    Info,
+    Warn,
+    Error,
+    Off,
+}
+impl From<LogLevel> for LevelFilter {
+    fn from(value: LogLevel) -> Self {
+        match value {
+            LogLevel::Trace => LevelFilter::TRACE,
+            LogLevel::Debug => LevelFilter::DEBUG,
+            LogLevel::Info => LevelFilter::INFO,
+            LogLevel::Warn => LevelFilter::WARN,
+            LogLevel::Error => LevelFilter::ERROR,
+            LogLevel::Off => LevelFilter::OFF,
+        }
+    }
+}
+
+pub async fn parse_config(args: ArgsOs) -> Result<Config, ConfigError> {
+    let mut parser = Parser::from_iter(args);
+    let mut path = None;
+
+    while let Some(arg) = parser.next()? {
+        match arg {
+            Arg::Short('c') | Arg::Long("config") => {
+                if path.is_none() {
+                    path = Some(parser.value()?);
+                } else {
+                    return Err(ConfigError::Argument(arg.unexpected()));
                 }
-                Arg::Short('v') | Arg::Long("version") => {
-                    return Err(ConfigError::Version(env!("CARGO_PKG_VERSION")));
-                }
-                Arg::Short('h') | Arg::Long("help") => return Err(ConfigError::Help(HELP_MSG)),
-                _ => return Err(ConfigError::Argument(arg.unexpected())),
             }
+            Arg::Short('v') | Arg::Long("version") => {
+                return Err(ConfigError::Version(env!("CARGO_PKG_VERSION")));
+            }
+            Arg::Short('h') | Arg::Long("help") => {
+                return Err(ConfigError::Help(crate::old_config::HELP_MSG));
+            }
+            Arg::Short('i') | Arg::Long("init") => {
+                warn!("Generating a example configuration to config.toml......");
+                let example = Config::full_example();
+                let example = toml::to_string_pretty(&example).unwrap();
+                tokio::fs::write("config.toml", example).await?;
+                return Err(ConfigError::Help("Done")); // TODO refactor
+            }
+            _ => return Err(ConfigError::Argument(arg.unexpected())),
         }
-
-        if path.is_none() {
-            return Err(ConfigError::NoConfig);
-        }
-
-        let file = File::open(path.unwrap())?;
-        let reader = BufReader::new(file);
-        let stripped = StripComments::new(reader);
-        Ok(serde_json::from_reader(stripped)?)
-    }
-}
-
-mod default {
-    use std::{path::PathBuf, time::Duration};
-
-    use crate::utils::CongestionControl;
-
-    pub fn congestion_control() -> CongestionControl {
-        CongestionControl::Cubic
     }
 
-    pub fn alpn() -> Vec<Vec<u8>> {
-        Vec::new()
+    if path.is_none() {
+        return Err(ConfigError::NoConfig);
     }
+    let path = path.unwrap().to_string_lossy().to_string();
+    let config_text = tokio::fs::read(&path).await?;
+    let config_text = StripComments::new(config_text.as_slice());
+    let config = if path.ends_with(".json") {
+        let config: OldConfig = serde_json::from_reader(config_text)?;
+        config.into()
+    } else if path.ends_with(".toml") {
+        Figment::from(Serialized::defaults(Config::default()))
+            .merge(Toml::file(path))
+            .extract()
+            .unwrap()
+    } else {
+        todo!("Unsupport config format warning")
+    };
 
-    pub fn udp_relay_ipv6() -> bool {
-        true
-    }
-
-    pub fn zero_rtt_handshake() -> bool {
-        false
-    }
-
-    pub fn auth_timeout() -> Duration {
-        Duration::from_secs(3)
-    }
-
-    pub fn task_negotiation_timeout() -> Duration {
-        Duration::from_secs(3)
-    }
-
-    pub fn max_idle_time() -> Duration {
-        Duration::from_secs(10)
-    }
-
-    pub fn max_external_packet_size() -> usize {
-        1500
-    }
-
-    pub fn initial_window() -> Option<u64> {
-        None
-    }
-
-    pub fn send_window() -> u64 {
-        8 * 1024 * 1024 * 2
-    }
-
-    pub fn receive_window() -> u32 {
-        8 * 1024 * 1024
-    }
-
-    // struct.TransportConfig#method.initial_mtu
-    pub fn initial_mtu() -> u16 {
-        1200
-    }
-
-    // struct.TransportConfig#method.min_mtu
-    pub fn min_mtu() -> u16 {
-        1200
-    }
-
-    // struct.TransportConfig#method.enable_segmentation_offload
-    // aka. Generic Segmentation Offload
-    pub fn gso() -> bool {
-        true
-    }
-
-    // struct.TransportConfig#method.mtu_discovery_config
-    // if not pmtu() -> mtu_discovery_config(None)
-    pub fn pmtu() -> bool {
-        true
-    }
-
-    pub fn gc_interval() -> Duration {
-        Duration::from_secs(3)
-    }
-
-    pub fn gc_lifetime() -> Duration {
-        Duration::from_secs(15)
-    }
-
-    pub fn certificate() -> PathBuf {
-        PathBuf::new()
-    }
-
-    pub fn private_key() -> PathBuf {
-        PathBuf::new()
-    }
-
-    pub fn self_sign() -> bool {
-        false
-    }
-}
-
-pub fn deserialize_from_str<'de, T, D>(deserializer: D) -> Result<T, D::Error>
-where
-    T: FromStr,
-    <T as FromStr>::Err: Display,
-    D: Deserializer<'de>,
-{
-    let s = String::deserialize(deserializer)?;
-    T::from_str(&s).map_err(DeError::custom)
-}
-
-pub fn deserialize_users<'de, D>(deserializer: D) -> Result<HashMap<Uuid, Box<[u8]>>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let users = HashMap::<Uuid, String>::deserialize(deserializer)?;
-
-    if users.is_empty() {
-        return Err(DeError::custom("users cannot be empty"));
-    }
-
-    Ok(users
-        .into_iter()
-        .map(|(k, v)| (k, v.into_bytes().into_boxed_slice()))
-        .collect())
-}
-
-pub fn deserialize_alpn<'de, D>(deserializer: D) -> Result<Vec<Vec<u8>>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let s = Vec::<String>::deserialize(deserializer)?;
-    Ok(s.into_iter().map(|alpn| alpn.into_bytes()).collect())
-}
-
-pub fn deserialize_duration<'de, D>(deserializer: D) -> Result<Duration, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let s = String::deserialize(deserializer)?;
-
-    s.parse::<HumanDuration>()
-        .map(|d| *d)
-        .map_err(DeError::custom)
-}
-
-#[derive(Debug, Error)]
-pub enum ConfigError {
-    #[error(transparent)]
-    Argument(#[from] ArgumentError),
-    #[error("no config file specified")]
-    NoConfig,
-    #[error("{0}")]
-    Version(&'static str),
-    #[error("{0}")]
-    Help(&'static str),
-    #[error(transparent)]
-    Io(#[from] IoError),
-    #[error(transparent)]
-    Serde(#[from] SerdeError),
+    Ok(config)
 }
