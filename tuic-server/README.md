@@ -36,10 +36,40 @@ docker run --name tuic-server \
   -v /PATH/TO/CONFIG:/etc/tuic/config.json \
   -v /PATH/TO/CERTIFICATE:PATH/TO/CERTIFICATE \
   -v /PATH/TO/PRIVATE_KEY:PATH/TO/PRIVATE_KEY \
-  -dit ghcr.io/itsusinn/tuic-server:<tag>
+  -dit ghcr.io/itsusinn/tuic-server:latest
 ```
-replace <tag> with [current version tag](https://github.com/Itsusinn/tuic/pkgs/container/tuic-server)
 
+Or with Docker Compose
+
+```yaml
+services:
+  tuic:
+    image: ghcr.io/itsusinn/tuic-server:latest
+    restart: always
+    container_name: tuic
+    network_mode: host
+    volumes:
+      - ./config.json:/etc/tuic/config.json:ro
+      - ./cert.crt:/PATH/TO/CERT:ro
+      - ./key.crt:/PATH/TO/KEY:ro
+```
+If you use TOML format configuration
+
+
+```yaml
+services:
+  tuic:
+    image: ghcr.io/itsusinn/tuic-server:latest
+    restart: always
+    container_name: tuic
+    network_mode: host
+    volumes:
+      - ./config.toml:/etc/tuic/config.json:ro # Must be /path/to/toml:/etc/tuic/*config.json*:ro, this will be fix in 2.0.0.
+      - ./cert.crt:/PATH/TO/CERT:ro
+      - ./key.crt:/PATH/TO/KEY:ro
+    environment:
+      - TUIC_FORCE_TOML=1
+```
 
 ## Configuration
 
