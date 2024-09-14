@@ -6,7 +6,9 @@ use std::{
 };
 
 use anyhow::Context;
+use educe::Educe;
 use rustls::pki_types::{CertificateDer, PrivateKeyDer, PrivatePkcs8KeyDer};
+use serde::{Deserialize, Serialize};
 
 pub fn load_cert_chain(cert_path: &Path) -> anyhow::Result<Vec<CertificateDer<'static>>> {
     let cert_chain = fs::read(cert_path).context("failed to read certificate chain")?;
@@ -47,13 +49,19 @@ impl Display for UdpRelayMode {
     }
 }
 
-pub enum CongestionControl {
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+#[derive(Educe)]
+#[educe(Default)]
+pub enum CongestionController {
+    #[educe(Default)]
+    Bbr,
     Cubic,
     NewReno,
-    Bbr,
 }
 
-impl FromStr for CongestionControl {
+// TODO remove in 2.0.0
+impl FromStr for CongestionController {
     type Err = &'static str;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {

@@ -14,11 +14,11 @@ repository.workspace = true
 [dependencies]
 
 lateinit = "0.2"
-
+toml = "0.8"
 lexopt = { version = "0.3", default-features = false }
 socket2 = { version = "0.5", default-features = false }
 
-uuid = { version = "1", default-features = false, features = ["serde", "std"] }
+uuid = { version = "1", default-features = false, features = ["serde", "std", "v4"] }
 
 # QUIC
 quinn = { version = "0.11", default-features = false, features = ["runtime-tokio", "rustls", "log"] }
@@ -30,7 +30,7 @@ register-count = { version = "0.1.0", default-features = false, features = ["std
 
 # Tokio/Async
 crossbeam-utils = { version = "0.8", default-features = false, features = ["std"] }
-tokio = { version = "1", default-features = false, features = ["io-util", "macros", "net", "parking_lot", "rt-multi-thread", "time"] }
+tokio = { version = "1", default-features = false, features = ["io-util", "macros", "net", "parking_lot", "rt-multi-thread", "time", "fs"] }
 tokio-util = { version = "0.7", default-features = false, features = ["compat"] }
 
 # TLS
@@ -42,6 +42,9 @@ rcgen = "0.13"
 bytes = { version = "1", default-features = false, features = ["std"] }
 serde = { version = "1", default-features = false, features = ["derive", "std"] }
 serde_json = { version = "1", default-features = false, features = ["std"] }
+figment = { version = "0.10", features = ["toml"] }
+educe = { version = "0.6", default-features = false, features = ["Default"] }
+humantime-serde = "1"
 
 # Json_comments
 json_comments = "0.2"
@@ -60,3 +63,4 @@ anyhow = "1"
 
 # Web
 axum = { version = "0.7", features = ["json", "tokio"] }
+axum-extra = { version = "0.9", features = ["typed-header"] }

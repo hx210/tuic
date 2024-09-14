@@ -7,7 +7,7 @@ use tokio::time;
 use tuic_quinn::Task;
 
 use super::Connection;
-use crate::{error::Error, utils::UdpRelayMode};
+use crate::{error::Error, utils::UdpRelayMode, CONFIG};
 
 impl Connection {
     pub async fn handle_uni_stream(self, recv: RecvStream, _reg: Register) {
@@ -30,7 +30,7 @@ impl Connection {
 
         let pre_process = async {
             let task = time::timeout(
-                self.task_negotiation_timeout,
+                CONFIG.task_negotiation_timeout,
                 self.model.accept_uni_stream(recv),
             )
             .await
@@ -92,7 +92,7 @@ impl Connection {
 
         let pre_process = async {
             let task = time::timeout(
-                self.task_negotiation_timeout,
+                CONFIG.task_negotiation_timeout,
                 self.model.accept_bi_stream(send, recv),
             )
             .await

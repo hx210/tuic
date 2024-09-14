@@ -1,24 +1,28 @@
+#![feature(trivial_bounds)]
+#![feature(let_chains)]
+
 use std::{env, process};
 
 use chrono::{Local, Offset, TimeZone};
-use tracing::Level;
+use config::{parse_config, Config};
+use lateinit::LateInit;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use crate::{
-    config::{Config, ConfigError},
-    server::Server,
-};
+use crate::{old_config::ConfigError, server::Server};
 
 mod config;
 mod connection;
 mod error;
+mod old_config;
 mod restful;
 mod server;
 mod utils;
 
+pub static CONFIG: LateInit<Config> = LateInit::new();
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let cfg = match Config::parse(env::args_os()) {
+    let cfg = match parse_config(env::args_os()).await {
         Ok(cfg) => cfg,
         Err(ConfigError::Version(msg) | ConfigError::Help(msg)) => {
             println!("{msg}");
@@ -29,7 +33,10 @@ async fn main() -> anyhow::Result<()> {
             process::exit(1);
         }
     };
-    let filter = tracing_subscriber::filter::Targets::new().with_default(Level::INFO);
+    unsafe {
+        CONFIG.init(cfg);
+    }
+    let filter = tracing_subscriber::filter::Targets::new().with_default(CONFIG.log_level);
     let registry = tracing_subscriber::registry();
     registry
         .with(filter)
@@ -53,7 +60,7 @@ async fn main() -> anyhow::Result<()> {
         )
         .try_init()?;
 
-    match Server::init(cfg) {
+    match Server::init() {
         Ok(server) => server.start().await,
         Err(err) => {
             eprintln!("{err}");

@@ -1,9 +1,6 @@
 use std::{
     collections::HashMap,
-    sync::{
-        atomic::{AtomicU32, Ordering},
-        Arc,
-    },
+    sync::{atomic::AtomicU32, Arc},
     time::Duration,
 };
 
@@ -13,10 +10,9 @@ use register_count::Counter;
 use tokio::{sync::RwLock as AsyncRwLock, time};
 use tracing::{info, warn};
 use tuic_quinn::{side, Authenticate, Connection as Model};
-use uuid::Uuid;
 
 use self::{authenticated::Authenticated, udp_session::UdpSession};
-use crate::{error::Error, restful::ONLINE, utils::UdpRelayMode};
+use crate::{error::Error, restful, utils::UdpRelayMode, CONFIG};
 
 mod authenticated;
 mod handle_stream;
@@ -24,19 +20,15 @@ mod handle_task;
 mod udp_session;
 
 pub const ERROR_CODE: VarInt = VarInt::from_u32(0);
-pub const DEFAULT_CONCURRENT_STREAMS: u32 = 32;
+pub const INIT_CONCURRENT_STREAMS: u32 = 32;
 
 #[derive(Clone)]
 pub struct Connection {
     inner: QuinnConnection,
     model: Model<side::Server>,
-    users: Arc<HashMap<Uuid, Box<[u8]>>>,
-    udp_relay_ipv6: bool,
     auth: Authenticated,
-    task_negotiation_timeout: Duration,
     udp_sessions: Arc<AsyncRwLock<HashMap<u16, UdpSession>>>,
     udp_relay_mode: Arc<AtomicCell<Option<UdpRelayMode>>>,
-    max_external_pkt_size: usize,
     remote_uni_stream_cnt: Counter,
     remote_bi_stream_cnt: Counter,
     max_concurrent_uni_streams: Arc<AtomicU32>,
@@ -45,21 +37,11 @@ pub struct Connection {
 
 #[allow(clippy::too_many_arguments)]
 impl Connection {
-    pub async fn handle(
-        conn: Connecting,
-        users: Arc<HashMap<Uuid, Box<[u8]>>>,
-        udp_relay_ipv6: bool,
-        zero_rtt_handshake: bool,
-        auth_timeout: Duration,
-        task_negotiation_timeout: Duration,
-        max_external_pkt_size: usize,
-        gc_interval: Duration,
-        gc_lifetime: Duration,
-    ) {
+    pub async fn handle(conn: Connecting) {
         let addr = conn.remote_address();
 
         let init = async {
-            let conn = if zero_rtt_handshake {
+            let conn = if CONFIG.zero_rtt_handshake {
                 match conn.into_0rtt() {
                     Ok((conn, _)) => conn,
                     Err(conn) => conn.await?,
@@ -68,13 +50,7 @@ impl Connection {
                 conn.await?
             };
 
-            Ok::<_, Error>(Self::new(
-                conn,
-                users,
-                udp_relay_ipv6,
-                task_negotiation_timeout,
-                max_external_pkt_size,
-            ))
+            Ok::<_, Error>(Self::new(conn))
         };
 
         match init.await {
@@ -85,8 +61,8 @@ impl Connection {
                     user = conn.auth,
                 );
 
-                tokio::spawn(conn.clone().timeout_authenticate(auth_timeout));
-                tokio::spawn(conn.clone().collect_garbage(gc_interval, gc_lifetime));
+                tokio::spawn(conn.clone().timeout_authenticate(CONFIG.auth_timeout));
+                tokio::spawn(conn.clone().collect_garbage());
 
                 loop {
                     if conn.is_closed() {
@@ -138,34 +114,24 @@ impl Connection {
         }
     }
 
-    fn new(
-        conn: QuinnConnection,
-        users: Arc<HashMap<Uuid, Box<[u8]>>>,
-        udp_relay_ipv6: bool,
-        task_negotiation_timeout: Duration,
-        max_external_pkt_size: usize,
-    ) -> Self {
+    fn new(conn: QuinnConnection) -> Self {
         Self {
             inner: conn.clone(),
             model: Model::<side::Server>::new(conn),
-            users,
-            udp_relay_ipv6,
             auth: Authenticated::new(),
-            task_negotiation_timeout,
             udp_sessions: Arc::new(AsyncRwLock::new(HashMap::new())),
             udp_relay_mode: Arc::new(AtomicCell::new(None)),
-            max_external_pkt_size,
             remote_uni_stream_cnt: Counter::new(),
             remote_bi_stream_cnt: Counter::new(),
-            max_concurrent_uni_streams: Arc::new(AtomicU32::new(DEFAULT_CONCURRENT_STREAMS)),
-            max_concurrent_bi_streams: Arc::new(AtomicU32::new(DEFAULT_CONCURRENT_STREAMS)),
+            max_concurrent_uni_streams: Arc::new(AtomicU32::new(INIT_CONCURRENT_STREAMS)),
+            max_concurrent_bi_streams: Arc::new(AtomicU32::new(INIT_CONCURRENT_STREAMS)),
         }
     }
 
     async fn authenticate(&self, auth: &Authenticate) -> Result<(), Error> {
         if self.auth.get().is_some() {
             Err(Error::DuplicatedAuth)
-        } else if self
+        } else if CONFIG
             .users
             .get(&auth.uuid())
             .map_or(false, |password| auth.validate(password))
@@ -182,10 +148,7 @@ impl Connection {
 
         match self.auth.get() {
             Some(uuid) => {
-                ONLINE
-                    .get(&uuid)
-                    .expect("Authorized UUID not present in users table")
-                    .fetch_add(1, Ordering::Release);
+                restful::client_connect(&uuid);
             }
             None => {
                 warn!(
@@ -198,16 +161,13 @@ impl Connection {
         }
     }
 
-    async fn collect_garbage(self, gc_interval: Duration, gc_lifetime: Duration) {
+    async fn collect_garbage(self) {
         loop {
-            time::sleep(gc_interval).await;
+            time::sleep(CONFIG.gc_interval).await;
 
             if self.is_closed() {
                 if let Some(uuid) = self.auth.get() {
-                    ONLINE
-                        .get(&uuid)
-                        .expect("Authorized UUID not present in users table")
-                        .fetch_sub(1, Ordering::Release);
+                    restful::client_disconnect(&uuid);
                 }
                 break;
             }
@@ -218,7 +178,7 @@ impl Connection {
                 addr = self.inner.remote_address(),
                 user = self.auth,
             );
-            self.model.collect_garbage(gc_lifetime);
+            self.model.collect_garbage(CONFIG.gc_lifetime);
         }
     }
 
