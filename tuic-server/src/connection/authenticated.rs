@@ -4,7 +4,7 @@ use std::{
     sync::Arc,
 };
 
-use crossbeam_utils::atomic::AtomicCell;
+use arc_swap::ArcSwap;
 use tokio::sync::{broadcast::Sender, RwLock as AsyncRwLock};
 use uuid::Uuid;
 
@@ -13,7 +13,7 @@ pub struct Authenticated(Arc<AuthenticatedInner>);
 
 struct AuthenticatedInner {
     /// uuid that waiting for auth
-    uuid: AtomicCell<Option<Uuid>>,
+    uuid: ArcSwap<Option<Uuid>>,
     tx: AsyncRwLock<Option<Sender<()>>>,
 }
 
@@ -23,14 +23,14 @@ impl Authenticated {
         let (tx, _) = tokio::sync::broadcast::channel(1);
 
         Self(Arc::new(AuthenticatedInner {
-            uuid: AtomicCell::new(None),
+            uuid: ArcSwap::new(None.into()),
             tx: AsyncRwLock::new(Some(tx)),
         }))
     }
 
     /// invoking 'set' means auth success
     pub async fn set(&self, uuid: Uuid) {
-        self.0.uuid.store(Some(uuid));
+        self.0.uuid.store(Some(uuid).into());
         if let Some(tx) = self.0.tx.read().await.deref() {
             // It will fail if there is no active receiver
             _ = tx.send(());
@@ -42,7 +42,7 @@ impl Authenticated {
     }
 
     pub fn get(&self) -> Option<Uuid> {
-        self.0.uuid.load()
+        **self.0.uuid.load()
     }
 
     /// waiting for auth success

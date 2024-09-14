@@ -46,7 +46,7 @@ impl Connection {
             };
 
             let same_pkt_src = matches!(task, Task::Packet(_))
-                && matches!(self.udp_relay_mode.load(), Some(UdpRelayMode::Native));
+                && matches!(**self.udp_relay_mode.load(), Some(UdpRelayMode::Native));
             if same_pkt_src {
                 return Err(Error::UnexpectedPacketSource);
             }
@@ -139,7 +139,7 @@ impl Connection {
             };
 
             let same_pkt_src = matches!(task, Task::Packet(_))
-                && matches!(self.udp_relay_mode.load(), Some(UdpRelayMode::Quic));
+                && matches!(**self.udp_relay_mode.load(), Some(UdpRelayMode::Quic));
             if same_pkt_src {
                 return Err(Error::UnexpectedPacketSource);
             }
