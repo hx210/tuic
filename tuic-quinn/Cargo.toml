@@ -1,6 +1,6 @@
 [package]
 name = "tuic-quinn"
-version = "0.1.0"
+version.workspace = true
 authors.workspace = true
 description = "A thin layer on top of quinn to provide functions for TUIC"
 categories = ["network-programming"]

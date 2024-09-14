@@ -201,13 +201,13 @@ jobs:
 
   release:
     name: Release
-
+    if: github.event_name != 'pull_request'
     needs: [compile]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 
+          fetch-depth: 0
           fetch-tags: true
 
       - name: Merge binaries
@@ -223,27 +223,27 @@ jobs:
           name: binaries
           path: ./packages
 
-      - name: Delete previous latest tag 
-        run: | 
-          git tag -d latest || true 
-          git push origin :refs/tags/latest || true 
+      - name: Delete previous latest tag
+        run: |
+          git tag -d latest || true
+          git push origin :refs/tags/latest || true
           gh release list | grep Draft |  awk '{print $1 " \t"}' |  while read -r line; do gh release delete -y "$line"; done 
-        env: 
-          GH_TOKEN: ${{ github.token }} 
-  
-      - name: Create new latest tag 
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Create new latest tag
         if: startsWith(github.ref, 'refs/heads/dev')
-        run: | 
-          git tag latest 
+        run: |
+          git tag latest
           git push origin latest
 
-      - name: Generate a changelog 
-        uses: orhun/git-cliff-action@main 
-        id: git-cliff 
-        with: 
-          config: .github/cliff.toml 
-          args: --latest --strip header  
-        env: 
+      - name: Generate a changelog
+        uses: orhun/git-cliff-action@main
+        id: git-cliff
+        with:
+          config: .github/cliff.toml
+          args: --latest --strip header
+        env:
           GITHUB_REPO: ${{ github.repository }}
 
       - name: Github stable release
@@ -252,7 +252,7 @@ jobs:
         with:
           token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
-          generate_release_notes: false 
+          generate_release_notes: false
           body: "${{ steps.git-cliff.outputs.content }}"
           files: |
             packages/*
@@ -264,7 +264,7 @@ jobs:
         with:
           token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: true
-          generate_release_notes: false 
+          generate_release_notes: false
           body: "${{ steps.git-cliff.outputs.content }}"
           tag_name: "latest"
           files: |
