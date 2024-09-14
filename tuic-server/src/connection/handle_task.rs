@@ -10,6 +10,7 @@ use tokio::{
     net::{self, TcpStream},
 };
 use tokio_util::compat::FuturesAsyncReadCompatExt;
+use tracing::{info, warn};
 use tuic::Address;
 use tuic_quinn::{Authenticate, Connect, Packet};
 
@@ -18,7 +19,7 @@ use crate::{error::Error, utils::UdpRelayMode};
 
 impl Connection {
     pub async fn handle_authenticate(&self, auth: Authenticate) {
-        log::info!(
+        info!(
             "[{id:#010x}] [{addr}] [{user}] [authenticate] {auth_uuid}",
             id = self.id(),
             addr = self.inner.remote_address(),
@@ -30,7 +31,7 @@ impl Connection {
     pub async fn handle_connect(&self, conn: Connect) {
         let target_addr = conn.addr().to_string();
 
-        log::info!(
+        info!(
             "[{id:#010x}] [{addr}] [{user}] [connect] {target_addr}",
             id = self.id(),
             addr = self.inner.remote_address(),
@@ -73,7 +74,7 @@ impl Connection {
 
         match process.await {
             Ok(()) => {}
-            Err(err) => log::warn!(
+            Err(err) => warn!(
                 "[{id:#010x}] [{addr}] [{user}] [connect] {target_addr}: {err}",
                 id = self.id(),
                 addr = self.inner.remote_address(),
@@ -88,7 +89,7 @@ impl Connection {
         let frag_id = pkt.frag_id();
         let frag_total = pkt.frag_total();
 
-        log::info!(
+        info!(
             "[{id:#010x}] [{addr}] [{user}] [packet] [{assoc_id:#06x}] [from-{mode}] \
              [{pkt_id:#06x}] fragment {frag_id}/{frag_total}",
             id = self.id(),
@@ -103,7 +104,7 @@ impl Connection {
             Ok(None) => return,
             Ok(Some(res)) => res,
             Err(err) => {
-                log::warn!(
+                warn!(
                     "[{id:#010x}] [{addr}] [{user}] [packet] [{assoc_id:#06x}] [from-{mode}] \
                      [{pkt_id:#06x}] fragment {frag_id}/{frag_total}: {err}",
                     id = self.id(),
@@ -116,7 +117,7 @@ impl Connection {
         };
 
         let process = async {
-            log::info!(
+            info!(
                 "[{id:#010x}] [{addr}] [{user}] [packet] [{assoc_id:#06x}] [from-{mode}] \
                  [{pkt_id:#06x}] to {src_addr}",
                 id = self.id(),
@@ -151,7 +152,7 @@ impl Connection {
         };
 
         if let Err(err) = process.await {
-            log::warn!(
+            warn!(
                 "[{id:#010x}] [{addr}] [{user}] [packet] [{assoc_id:#06x}] [from-{mode}] \
                  [{pkt_id:#06x}] to {src_addr}: {err}",
                 id = self.id(),
@@ -163,7 +164,7 @@ impl Connection {
     }
 
     pub async fn handle_dissociate(&self, assoc_id: u16) {
-        log::info!(
+        info!(
             "[{id:#010x}] [{addr}] [{user}] [dissociate] [{assoc_id:#06x}]",
             id = self.id(),
             addr = self.inner.remote_address(),
@@ -176,7 +177,7 @@ impl Connection {
     }
 
     pub async fn handle_heartbeat(&self) {
-        log::info!(
+        info!(
             "[{id:#010x}] [{addr}] [{user}] [heartbeat]",
             id = self.id(),
             addr = self.inner.remote_address(),
@@ -187,7 +188,7 @@ impl Connection {
     pub async fn relay_packet(self, pkt: Bytes, addr: Address, assoc_id: u16) {
         let addr_display = addr.to_string();
 
-        log::info!(
+        info!(
             "[{id:#010x}] [{addr}] [{user}] [packet] [{assoc_id:#06x}] [to-{mode}] from {src_addr}",
             id = self.id(),
             addr = self.inner.remote_address(),
@@ -202,7 +203,7 @@ impl Connection {
         };
 
         if let Err(err) = res {
-            log::warn!(
+            warn!(
                 "[{id:#010x}] [{addr}] [{user}] [packet] [{assoc_id:#06x}] [to-{mode}] from \
                  {src_addr}: {err}",
                 id = self.id(),

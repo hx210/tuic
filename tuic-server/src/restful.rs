@@ -13,6 +13,7 @@ use axum_extra::{
     TypedHeader,
 };
 use lateinit::LateInit;
+use tracing::warn;
 use uuid::Uuid;
 
 use crate::CONFIG;
@@ -31,7 +32,7 @@ pub async fn start() {
         .route("/kick", post(kick))
         .route("/online", get(list_online));
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-    log::warn!("RESTful server started, listening on {addr}");
+    warn!("RESTful server started, listening on {addr}");
     axum::serve(listener, app).await.unwrap();
 }
 

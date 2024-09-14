@@ -4,6 +4,7 @@ use bytes::Bytes;
 use quinn::{RecvStream, SendStream, VarInt};
 use register_count::Register;
 use tokio::time;
+use tracing::{debug, warn};
 use tuic_quinn::Task;
 
 use super::Connection;
@@ -11,7 +12,7 @@ use crate::{error::Error, utils::UdpRelayMode, CONFIG};
 
 impl Connection {
     pub async fn handle_uni_stream(self, recv: RecvStream, _reg: Register) {
-        log::debug!(
+        debug!(
             "[{id:#010x}] [{addr}] [{user}] incoming unidirectional stream",
             id = self.id(),
             addr = self.inner.remote_address(),
@@ -60,7 +61,7 @@ impl Connection {
             Ok(Task::Dissociate(assoc_id)) => self.handle_dissociate(assoc_id).await,
             Ok(_) => unreachable!(), // already filtered in `tuic_quinn`
             Err(err) => {
-                log::warn!(
+                warn!(
                     "[{id:#010x}] [{addr}] [{user}] handling incoming unidirectional stream \
                      error: {err}",
                     id = self.id(),
@@ -73,7 +74,7 @@ impl Connection {
     }
 
     pub async fn handle_bi_stream(self, (send, recv): (SendStream, RecvStream), _reg: Register) {
-        log::debug!(
+        debug!(
             "[{id:#010x}] [{addr}] [{user}] incoming bidirectional stream",
             id = self.id(),
             addr = self.inner.remote_address(),
@@ -110,7 +111,7 @@ impl Connection {
             Ok(Task::Connect(conn)) => self.handle_connect(conn).await,
             Ok(_) => unreachable!(), // already filtered in `tuic_quinn`
             Err(err) => {
-                log::warn!(
+                warn!(
                     "[{id:#010x}] [{addr}] [{user}] handling incoming bidirectional stream error: \
                      {err}",
                     id = self.id(),
@@ -123,7 +124,7 @@ impl Connection {
     }
 
     pub async fn handle_datagram(self, dg: Bytes) {
-        log::debug!(
+        debug!(
             "[{id:#010x}] [{addr}] [{user}] incoming datagram",
             id = self.id(),
             addr = self.inner.remote_address(),
@@ -152,7 +153,7 @@ impl Connection {
             Ok(Task::Heartbeat) => self.handle_heartbeat().await,
             Ok(_) => unreachable!(),
             Err(err) => {
-                log::warn!(
+                warn!(
                     "[{id:#010x}] [{addr}] [{user}] handling incoming datagram error: {err}",
                     id = self.id(),
                     addr = self.inner.remote_address(),

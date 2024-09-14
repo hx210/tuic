@@ -8,7 +8,7 @@ use arc_swap::ArcSwap;
 use quinn::{Connecting, Connection as QuinnConnection, VarInt};
 use register_count::Counter;
 use tokio::{sync::RwLock as AsyncRwLock, time};
-use tracing::{info, warn};
+use tracing::{debug, info, warn};
 use tuic_quinn::{side, Authenticate, Connection as Model};
 
 use self::{authenticated::Authenticated, udp_session::UdpSession};
@@ -85,13 +85,13 @@ impl Connection {
                     match handle_incoming.await {
                         Ok(()) => {}
                         Err(err) if err.is_trivial() => {
-                            log::debug!(
+                            debug!(
                                 "[{id:#010x}] [{addr}] [{user}] {err}",
                                 id = conn.id(),
                                 user = conn.auth,
                             );
                         }
-                        Err(err) => log::warn!(
+                        Err(err) => warn!(
                             "[{id:#010x}] [{addr}] [{user}] connection error: {err}",
                             id = conn.id(),
                             user = conn.auth,
@@ -100,13 +100,13 @@ impl Connection {
                 }
             }
             Err(err) if err.is_trivial() => {
-                log::debug!(
+                debug!(
                     "[{id:#010x}] [{addr}] [unauthenticated] {err}",
                     id = u32::MAX,
                 );
             }
             Err(err) => {
-                log::warn!(
+                warn!(
                     "[{id:#010x}] [{addr}] [unauthenticated] {err}",
                     id = u32::MAX,
                 )
@@ -172,7 +172,7 @@ impl Connection {
                 break;
             }
 
-            log::debug!(
+            debug!(
                 "[{id:#010x}] [{addr}] [{user}] packet fragment garbage collecting event",
                 id = self.id(),
                 addr = self.inner.remote_address(),

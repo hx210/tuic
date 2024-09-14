@@ -13,6 +13,7 @@ use tokio::{
         RwLock as AsyncRwLock,
     },
 };
+use tracing::warn;
 use tuic::Address;
 
 use super::Connection;
@@ -95,7 +96,7 @@ impl UdpSession {
                 let (pkt, addr) = match session_listening.recv().await {
                     Ok(res) => res,
                     Err(err) => {
-                        log::warn!(
+                        warn!(
                             "[{id:#010x}] [{addr}] [{user}] [packet] [{assoc_id:#06x}] outbound \
                              listening error: {err}",
                             id = session_listening.0.conn.id(),
