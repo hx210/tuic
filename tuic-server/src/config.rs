@@ -241,17 +241,14 @@ pub async fn parse_config(args: ArgsOs) -> Result<Config, ConfigError> {
     let path = path.unwrap().to_string_lossy().to_string();
     let config_text = tokio::fs::read(&path).await?;
     let config_text = StripComments::new(config_text.as_slice());
-    let config = if path.ends_with(".json") {
-        let config: OldConfig = serde_json::from_reader(config_text)?;
-        config.into()
-    } else if path.ends_with(".toml") {
+    let config = if path.ends_with(".toml") || std::env::var("TUIC_FORCE_TOML").is_ok() {
         Figment::from(Serialized::defaults(Config::default()))
             .merge(Toml::file(path))
             .extract()
             .unwrap()
     } else {
-        todo!("Unsupport config format warning")
+        let config: OldConfig = serde_json::from_reader(config_text)?;
+        config.into()
     };
-
     Ok(config)
 }
