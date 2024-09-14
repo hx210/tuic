@@ -43,111 +43,102 @@ replace <tag> with [current version tag](https://github.com/Itsusinn/tuic/pkgs/c
 
 ## Configuration
 
-```json5
-{
-    // The socket address to listen on
-    "server": "[::]:443",
+Since `tuic-server 1.2.0`, the new TOML format has been used. The old JSON format will be kept until `2.0.0`.
 
-    // User list, contains user UUID and password
-    "users": {
-        "00000000-0000-0000-0000-000000000000": "PASSWORD_0",
-        "00000000-0000-0000-0000-000000000001": "PASSWORD_1"
-    },
-    // Optional. Whether use auto-generated self-signed certificate and key.
-    // When enabled, the follwing `certificate` and `private_key` fields will be ignored.
-    // Default: false.
-    "self_sign": false,
+```toml
+### You can generate example configuration by using `tuic-server -i` or `tuic-server --init`
+### ALL settings are OPTIONAL, if you leave one empty, default value will be used
 
-    // Optional. The path to the certificate file
-    "certificate": "PATH/TO/CERTIFICATE",
+log_level = "info" # Default: info
 
-    // Optional. The path to the private key file
-    "private_key": "PATH/TO/PRIVATE_KEY",
+# The socket address to listen on
+server = "[::]:443" # Default: "[::]:443"
 
-    // Optional. Congestion control algorithm, available options:
-    // "cubic", "new_reno", "bbr"
-    // Default: "cubic"
-    "congestion_control": "cubic",
+# If the server should create separate UDP sockets for relaying IPv6 UDP packets
+udp_relay_ipv6 = true # Default: true
 
-    // Optional. Application layer protocol negotiation
-    // Default being empty (no ALPN)
-    "alpn": ["h3", "spdy/3.1"],
+# Enable 0-RTT QUIC connection handshake on the server side
+# This is not impacting much on the performance, as the protocol is fully multiplexed
+# WARNING: Disabling this is highly recommended, as it is vulnerable to replay attacks. See https://blog.cloudflare.com/even-faster-connection-establishment-with-quic-0-rtt-resumption/#attack-of-the-clones
+zero_rtt_handshake = false # Default: false
 
-    // Optional. If the server should create separate UDP sockets for relaying IPv6 UDP packets
-    // Default: true
-    "udp_relay_ipv6": true,
+# Set if the listening socket should be dual-stack
+# If this option is not set, the socket behavior is platform dependent
+dual_stack = true # Default: true
 
-    // Optional. Enable 0-RTT QUIC connection handshake on the server side
-    // This is not impacting much on the performance, as the protocol is fully multiplexed
-    // WARNING: Disabling this is highly recommended, as it is vulnerable to replay attacks. See https://blog.cloudflare.com/even-faster-connection-establishment-with-quic-0-rtt-resumption/#attack-of-the-clones
-    // Default: false
-    "zero_rtt_handshake": false,
+# How long the server should wait for the client to send the authentication command
+auth_timeout = "3s" # Default: "3s"
 
-    // Optional. Set if the listening socket should be dual-stack
-    // If this option is not set, the socket behavior is platform dependent
-    "dual_stack": true,
+# Maximum duration server expects for task negotiation
+task_negotiation_timeout = "3s" # Default: "3s"
 
-    // Optional. How long the server should wait for the client to send the authentication command
-    // Default: 3s
-    "auth_timeout": "3s",
+# Interval between UDP packet fragment garbage collection
+gc_interval = "3s" # Default: "3s"
 
-    // Optional. Maximum duration server expects for task negotiation
-    // Default: 3s
-    "task_negotiation_timeout": "3s",
+# How long the server should keep a UDP packet fragment. Outdated fragments will be dropped
+gc_lifetime = "15s" # Default: "15s"
 
-    // Optional. How long the server should wait before closing an idle connection
-    // Default: 10s
-    "max_idle_time": "10s",
+# Maximum packet size the server can receive from outbound UDP sockets, in bytes
+max_external_packet_size = 1500
 
-    // Optional. Maximum packet size the server can receive from outbound UDP sockets, in bytes
-    // Default: 1500
-    "max_external_packet_size": 1500,
+# User list, contains user UUID and password
+[users] # Default: empty
+f0e12827-fe60-458c-8269-a05ccb0ff8da = "YOUR_USER_PASSWD_HERE"
 
-    // Optional. Sets the initial congestion window size in bytes for the BBR algorithm, which may improve burst performance but could lead to congestion under high concurrency.
-    // Default: None
-    "initial_window": 1048576,
+[tls]
+# Whether use auto-generated self-signed certificate and key.
+# When enabled, the follwing `certificate` and `private_key` fields will be ignored.
+self_sign = true # Default: false
 
-    // Optional. Maximum number of bytes to transmit to a peer without acknowledgment
-    // Should be set to at least the expected connection latency multiplied by the maximum desired throughput
-    // Default: 8MiB * 2
-    "send_window": 16777216,
+# The path to the certificate file
+certificate = "" # Default: ""
 
-    // Optional. Maximum number of bytes the peer may transmit without acknowledgement on any one stream before becoming blocked
-    // Should be set to at least the expected connection latency multiplied by the maximum desired throughput
-    // Default: 8MiB
-    "receive_window": 8388608,
+# The path to the private key file
+private_key = "" # Default: ""
 
-    // Optional. The initial value to be used as the maximum UDP payload size before running MTU discovery
-    // Must be at least 1200
-    // Default: 1200
-    "initial_mtu": 1200,
+# Application layer protocol negotiation
+alpn = ["h3"] # Default: ["h3"]
 
-    // Optional. The maximum UDP payload size guaranteed to be supported by the network.
-    // Must be at least 1200
-    // Default: 1200
-    "min_mtu": 1200,
+# TODO
+[restful]
+addr = "[::]:8443"
+secret = "YOUR_SECRET_HERE"
 
-    // Optional. Whether to use `Generic Segmentation Offload` to accelerate transmits, when supported by the environment.
-    // Default: true
-    "gso": true,
+[quic]
+# The initial value to be used as the maximum UDP payload size before running MTU discovery
+# Must be at least 1200
+initial_mtu = 1200
 
-    // Optional. Whether to enable Path MTU Discovery to optimize packet size for transmission.
-    // Default: true
-    "pmtu": true,
+# The maximum UDP payload size guaranteed to be supported by the network.
+# Must be at least 1200
+min_mtu = 1200 # Default: 1200
 
-    // Optional. Interval between UDP packet fragment garbage collection
-    // Default: 3s
-    "gc_interval": "3s",
+# Whether to use `Generic Segmentation Offload` to accelerate transmits, when supported by the environment.
+gso = true # Default: true
 
-    // Optional. How long the server should keep a UDP packet fragment. Outdated fragments will be dropped
-    // Default: 15s
-    "gc_lifetime": "15s",
+# Whether to enable Path MTU Discovery to optimize packet size for transmission.
+pmtu = true # Default: true
 
-    // Optional.
-    // The restful server socket address
-    "restful_server": "[::]:8443"
-}
+# Maximum number of bytes to transmit to a peer without acknowledgment
+# Should be set to at least the expected connection latency multiplied by the maximum desired throughput
+send_window = 16777216 # Default: 8MiB * 2
+
+# Maximum number of bytes the peer may transmit without acknowledgement on any one stream before becoming blocked
+# Should be set to at least the expected connection latency multiplied by the maximum desired throughput
+receive_window = 8388608 # Default: 8MiB
+
+# How long the server should wait before closing an idle connection
+max_idle_time = "10s"
+
+
+[quic.congestion_control]
+# Congestion control algorithm, available options: "cubic", "new_reno", "bbr"
+controller = "bbr" # Default: "bbr"
+
+# Sets the initial congestion window size in bytes for the congestion controller algorithm, which may improve burst performance but could lead to congestion under high concurrency.
+initial_window = 1048576 # Default: 1048576
 ```
+
 
 ## License
 
