@@ -129,10 +129,15 @@ private_key = "" # Default: ""
 # Application layer protocol negotiation
 alpn = ["h3"] # Default: ["h3"]
 
-# TODO
-[restful]
-addr = "[::]:8443"
-secret = "YOUR_SECRET_HERE"
+# See `RESTful API` section below in README.
+# If you want disable RESTful function, remove entire `restful` section.
+[restful] # Default: empty
+addr = "[::]:8443" # Default: "[::]:8443"
+secret = "YOUR_SECRET_HERE" # Default: "YOUR_SECRET_HERE"
+
+# Limit how many clients one uuid can have at the same time.
+# Clients under same IP are considered as DIFFERENT clients
+maximum_clients_per_user = 0
 
 [quic]
 # The initial value to be used as the maximum UDP payload size before running MTU discovery
@@ -168,6 +173,22 @@ controller = "bbr" # Default: "bbr"
 # Sets the initial congestion window size in bytes for the congestion controller algorithm, which may improve burst performance but could lead to congestion under high concurrency.
 initial_window = 1048576 # Default: 1048576
 ```
+
+## RESTful API
+Authorization header is NECESSARY when making a request. `curl -H 'Authorization: Bearer YOUR_SECRET_HERE' http://ip:port/path`
+
+APIs:
+- GET `http://ip:port/online`
+
+  Response: TODO
+
+- GET `http://ip:port/detailed_online`
+
+  Response: TODO
+
+- POST `http://ip:port/kick`
+
+  Request ["userA", "userB"]
 
 
 ## License

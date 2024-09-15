@@ -3,8 +3,8 @@ members = ["tuic", "tuic-quinn", "tuic-server", "tuic-client"]
 resolver = "2"
 
 [workspace.package]
-authors = ["EAimTY <ea.imty@gmail.com>"]
-version = "1.1.1"
+authors = ["EAimTY <ea.imty@gmail.com>", "Itsusinn <root@itsusin.eu.org>"]
+version = "1.2.0"
 rust-version = "1.80.0"
 edition = "2021"
 readme = "README.md"
