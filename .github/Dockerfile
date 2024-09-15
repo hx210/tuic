@@ -8,6 +8,7 @@ COPY . /app/tuic
 
 WORKDIR /app/tuic
 
+ENV RUSTC_BOOTSTRAP=1
 RUN cargo build --release --config net.git-fetch-with-cli=true --package tuic-server
 RUN cp ./target/release/tuic-server /usr/bin/tuic-server
 RUN chmod +x /usr/bin/tuic-server
