@@ -84,7 +84,7 @@ log_level = "info" # Default: info
 # The socket address to listen on
 server = "[::]:443" # Default: "[::]:443"
 
-# If the server should create separate UDP sockets for relaying IPv6 UDP packets
+# Whether the server should create separate UDP sockets for relaying IPv6 UDP packets
 udp_relay_ipv6 = true # Default: true
 
 # Enable 0-RTT QUIC connection handshake on the server side
