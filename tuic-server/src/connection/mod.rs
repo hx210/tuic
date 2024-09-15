@@ -148,7 +148,7 @@ impl Connection {
 
         match self.auth.get() {
             Some(uuid) => {
-                restful::client_connect(&uuid);
+                restful::client_connect(&uuid, self.inner).await;
             }
             None => {
                 warn!(
@@ -167,7 +167,7 @@ impl Connection {
 
             if self.is_closed() {
                 if let Some(uuid) = self.auth.get() {
-                    restful::client_disconnect(&uuid);
+                    restful::client_disconnect(&uuid, self.inner).await;
                 }
                 break;
             }
