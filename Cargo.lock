@@ -739,12 +739,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "json_comments"
-version = "0.2.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9dbbfed4e59ba9750e15ba154fdfd9329cee16ff3df539c2666b70f58cc32105"
-
-[[package]]
 name = "lateinit"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1718,7 +1712,6 @@ dependencies = [
  "figment",
  "humantime",
  "humantime-serde",
- "json_comments",
  "lateinit",
  "lexopt",
  "quinn",

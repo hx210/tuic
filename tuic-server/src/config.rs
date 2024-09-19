@@ -5,7 +5,7 @@ use figment::{
     providers::{Format, Serialized, Toml},
     Figment,
 };
-use json_comments::StripComments;
+
 use lexopt::{Arg, Parser};
 use serde::{Deserialize, Serialize};
 use tracing::{level_filters::LevelFilter, warn};
