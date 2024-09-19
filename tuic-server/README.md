@@ -75,7 +75,10 @@ services:
 
 Since `tuic-server 1.2.0`, the new TOML format has been used. The old JSON format will be kept until `2.0.0`.
 
+`tuic-server -c server.toml`
+
 ```toml
+# server.toml
 ### You can generate example configuration by using `tuic-server -i` or `tuic-server --init`
 ### ALL settings are OPTIONAL, if you leave one empty, default value will be used
 
