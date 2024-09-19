@@ -8,7 +8,7 @@ on:
     branches: [ "dev" ]
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 env:
@@ -89,6 +89,12 @@ jobs:
           - os: windows-latest
             target: i686-pc-windows-msvc
             release-name: i686-windows
+            cross: false
+            postfix: ".exe"
+          # Windows Arm
+          - os: windows-latest
+            target: aarch64-pc-windows-msvc
+            release-name: aarch64-windows
             cross: false
             postfix: ".exe"
 
@@ -186,7 +192,7 @@ jobs:
       - name: Upload binaries
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.release-name || matrix.target }}-${{ env.PACKAGE }}
+          name: ${{ env.PACKAGE }}-${{ matrix.release-name || matrix.target }}
           path: ${{ env.PACKAGE }}-${{ matrix.release-name || matrix.target }}${{ matrix.postfix }}
 
       - name: Rename binary
@@ -195,13 +201,12 @@ jobs:
       - name: Upload binaries
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.release-name || matrix.target }}-${{ env.PACKAGE2 }}
+          name: ${{ env.PACKAGE2 }}-${{ matrix.release-name || matrix.target }}
           path: ${{ env.PACKAGE2 }}-${{ matrix.release-name || matrix.target }}${{ matrix.postfix }}
 
 
   release:
     name: Release
-    if: github.event_name != 'pull_request'
     needs: [compile]
     runs-on: ubuntu-latest
     steps:
@@ -223,19 +228,22 @@ jobs:
           name: binaries
           path: ./packages
 
-      - name: Delete previous latest tag
+      - name: Clean git tag & release
+        if: startsWith(github.ref, 'refs/heads/master')
         run: |
+          # Deleted latest tag and push it
           git tag -d latest || true
           git push origin :refs/tags/latest || true
-          gh release list | grep Draft |  awk '{print $1 " \t"}' |  while read -r line; do gh release delete -y "$line"; done 
+          # Deleted all drafts
+          gh release list | grep Draft |  awk '{print $1 " \t"}' |  while read -r line; do gh release delete -y "$line"; done
         env:
           GH_TOKEN: ${{ github.token }}
 
-      - name: Create new latest tag
-        if: startsWith(github.ref, 'refs/heads/dev')
+      - name: Clean git tag
+        if: startsWith(github.ref, 'refs/tags/v*')
         run: |
-          git tag latest
-          git push origin latest
+          # Delete latest tag locally (for git-cliff)
+          git tag -d latest || true
 
       - name: Generate a changelog
         uses: orhun/git-cliff-action@main
@@ -250,10 +258,10 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/v')
         with:
-          token: "${{ secrets.GITHUB_TOKEN }}"
+          token: ${{ secrets.GITHUB_TOKEN }}
           prerelease: false
           generate_release_notes: false
-          body: "${{ steps.git-cliff.outputs.content }}"
+          body: ${{ steps.git-cliff.outputs.content }}
           files: |
             packages/*
             LICENSE
@@ -262,10 +270,10 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/heads/dev')
         with:
-          token: "${{ secrets.GITHUB_TOKEN }}"
+          token: ${{ secrets.GITHUB_TOKEN }}
           prerelease: true
           generate_release_notes: false
-          body: "${{ steps.git-cliff.outputs.content }}"
+          body: ${{ steps.git-cliff.outputs.content }}
           tag_name: "latest"
           files: |
             packages/*
@@ -274,7 +282,7 @@ jobs:
   docker:
     name: Docker
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [compile]
     steps:
       - uses: actions/checkout@v4
 
@@ -284,6 +292,23 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Download binaries amd64
+        uses: actions/download-artifact@v4
+        with:
+          name: tuic-server-x86_64-linux-musl
+          path: ./packages
+
+      - name: Download binaries arm64
+        uses: actions/download-artifact@v4
+        with:
+          name: tuic-server-aarch64-linux-musl
+          path: ./packages
+
+      - name: Rename binary
+        run: |
+          mv ./packages/clash-x86_64-unknown-linux-musl ./packages/tuic-server-amd64
+          mv ./packages/clash-aarch64-unknown-linux-musl ./packages/tuic-server-arm64
+
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -291,10 +316,12 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Get info
-        id: get-info
+      - name: Set version tag
         run: |
-          echo "TAG_VERSION=ghcr.io/${GITHUB_REPOSITORY_OWNER@L}/tuic-server:${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+          if [ $GITHUB_REF == refs/tags/v* ]; then
+            echo "TAG_VERSION=ghcr.io/${GITHUB_REPOSITORY_OWNER@L}/tuic-server:${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+          else
+            echo "TAG_VERSION=ghcr.io/${GITHUB_REPOSITORY_OWNER@L}/tuic-server:0.0.0" >> $GITHUB_ENV
           echo "TAG_LATEST=ghcr.io/${GITHUB_REPOSITORY_OWNER@L}/tuic-server:latest" >> $GITHUB_ENV
 
       - name: Build and push
@@ -303,5 +330,5 @@ jobs:
           context: .
           file: .github/Dockerfile
           platforms: linux/amd64,linux/arm64
-          push: true
+          push: ${{ startsWith(github.ref, 'refs/tags/v') }}
           tags: ${{ env.TAG_VERSION }},${{ env.TAG_LATEST }}
