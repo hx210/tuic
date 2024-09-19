@@ -11,7 +11,6 @@ use std::{
 };
 
 use humantime::Duration as HumanDuration;
-use json_comments::StripComments;
 use lexopt::{Arg, Error as ArgumentError, Parser};
 use log::LevelFilter;
 use serde::{de::Error as DeError, Deserialize, Deserializer};
@@ -175,8 +174,7 @@ impl Config {
 
         let file = File::open(path.unwrap())?;
         let reader = BufReader::new(file);
-        let stripped = StripComments::new(reader);
-        Ok(serde_json::from_reader(stripped)?)
+        Ok(serde_json::from_reader(reader)?)
     }
 }
 

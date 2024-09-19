@@ -1670,7 +1670,6 @@ dependencies = [
  "crossbeam-utils",
  "env_logger",
  "humantime",
- "json_comments",
  "lexopt",
  "log",
  "once_cell",
