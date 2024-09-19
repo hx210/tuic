@@ -26,9 +26,6 @@ socket2 = { version = "0.5", default-features = false }
 socks5-proto = { version = "0.3", default-features = false }
 socks5-server = { version = "0.8", default-features = false }
 
-# Json_comments
-json_comments = "0.2"
-
 uuid = { version = "1", default-features = false, features = ["serde", "std"] }
 
 # QUIC
