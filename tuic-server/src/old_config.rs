@@ -43,6 +43,7 @@ pub struct OldConfig {
     )]
     pub congestion_control: CongestionController,
 
+    #[serde(default = "default::alpn")]
     pub alpn: Vec<String>,
 
     #[serde(default = "default::udp_relay_ipv6")]
@@ -197,6 +198,10 @@ mod default {
 
     pub fn self_sign() -> bool {
         false
+    }
+
+    pub fn alpn() -> Vec<String> {
+        Vec::new()
     }
 }
 
