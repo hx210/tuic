@@ -5,7 +5,6 @@ use figment::{
     providers::{Format, Serialized, Toml},
     Figment,
 };
-
 use lexopt::{Arg, Parser};
 use serde::{Deserialize, Serialize};
 use tracing::{level_filters::LevelFilter, warn};
@@ -112,7 +111,7 @@ pub struct CongestionControlConfig {
 #[educe(Default)]
 #[serde(deny_unknown_fields)]
 pub struct RestfulConfig {
-    #[educe(Default(expression = "[::]:8443".parse().unwrap()))]
+    #[educe(Default(expression = "127.0.0.1:8443".parse().unwrap()))]
     pub addr: SocketAddr,
     #[educe(Default = "YOUR_SECRET_HERE")]
     pub secret: String,

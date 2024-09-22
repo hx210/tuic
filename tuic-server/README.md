@@ -136,6 +136,7 @@ alpn = ["h3"] # Default: ["h3"]
 # If you want disable RESTful function, remove entire `restful` section.
 [restful] # Default: empty
 addr = "[::]:8443" # Default: "[::]:8443"
+# Set secret to "" to disable authorization
 secret = "YOUR_SECRET_HERE" # Default: "YOUR_SECRET_HERE"
 
 # Limit how many clients one uuid can have at the same time.

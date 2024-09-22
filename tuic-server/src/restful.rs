@@ -73,10 +73,12 @@ pub async fn start() {
 }
 
 async fn kick(
-    TypedHeader(token): TypedHeader<Authorization<Bearer>>,
+    token: Option<TypedHeader<Authorization<Bearer>>>,
     Json(users): Json<Vec<Uuid>>,
 ) -> StatusCode {
     if let Some(restful) = &CONFIG.restful
+        && !restful.secret.is_empty()
+        && let Some(TypedHeader(token)) = token
         && restful.secret != token.token()
     {
         return StatusCode::UNAUTHORIZED;
@@ -92,9 +94,11 @@ async fn kick(
 }
 
 async fn list_online(
-    TypedHeader(token): TypedHeader<Authorization<Bearer>>,
+    token: Option<TypedHeader<Authorization<Bearer>>>,
 ) -> (StatusCode, Json<HashMap<Uuid, u64>>) {
     if let Some(restful) = &CONFIG.restful
+        && !restful.secret.is_empty()
+        && let Some(TypedHeader(token)) = token
         && restful.secret != token.token()
     {
         return (StatusCode::UNAUTHORIZED, Json(HashMap::new()));
@@ -111,9 +115,11 @@ async fn list_online(
 }
 
 async fn list_detailed_online(
-    TypedHeader(token): TypedHeader<Authorization<Bearer>>,
+    token: Option<TypedHeader<Authorization<Bearer>>>,
 ) -> (StatusCode, Json<HashMap<Uuid, Vec<SocketAddr>>>) {
     if let Some(restful) = &CONFIG.restful
+        && !restful.secret.is_empty()
+        && let Some(TypedHeader(token)) = token
         && restful.secret != token.token()
     {
         return (StatusCode::UNAUTHORIZED, Json(HashMap::new()));
