@@ -2,16 +2,16 @@ use std::{
     collections::HashMap,
     net::{SocketAddr, TcpListener as StdTcpListener},
     sync::{
-        atomic::{AtomicU16, Ordering},
         Arc,
+        atomic::{AtomicU16, Ordering},
     },
 };
 
 use once_cell::sync::OnceCell;
 use socket2::{Domain, Protocol, SockAddr, Socket, Type};
 use socks5_server::{
-    auth::{NoAuth, Password},
     Auth, Connection, Server as Socks5Server,
+    auth::{NoAuth, Password},
 };
 use tokio::{net::TcpListener, sync::RwLock as AsyncRwLock};
 

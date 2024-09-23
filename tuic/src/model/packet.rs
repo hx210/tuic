@@ -8,8 +8,8 @@ use std::{
 use parking_lot::Mutex;
 
 use super::{
-    side::{self, Side},
     Assemblable, AssembleError, UdpSessions,
+    side::{self, Side},
 };
 use crate::{Address, Header, Packet as PacketHeader};
 

@@ -6,8 +6,8 @@ use std::{
     fmt::{Debug, Formatter, Result as FmtResult},
     mem,
     sync::{
-        atomic::{AtomicU16, Ordering},
         Arc,
+        atomic::{AtomicU16, Ordering},
     },
     time::{Duration, Instant},
 };

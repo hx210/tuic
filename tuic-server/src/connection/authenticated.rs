@@ -5,7 +5,7 @@ use std::{
 };
 
 use arc_swap::ArcSwap;
-use tokio::sync::{broadcast::Sender, RwLock as AsyncRwLock};
+use tokio::sync::{RwLock as AsyncRwLock, broadcast::Sender};
 use uuid::Uuid;
 
 #[derive(Clone)]

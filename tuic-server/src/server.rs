@@ -5,22 +5,22 @@ use std::{
 
 use anyhow::Context;
 use quinn::{
+    Endpoint, EndpointConfig, IdleTimeout, ServerConfig, TokioRuntime, TransportConfig, VarInt,
     congestion::{BbrConfig, CubicConfig, NewRenoConfig},
     crypto::rustls::QuicServerConfig,
-    Endpoint, EndpointConfig, IdleTimeout, ServerConfig, TokioRuntime, TransportConfig, VarInt,
 };
 use rustls::{
-    pki_types::{CertificateDer, PrivateKeyDer, PrivatePkcs8KeyDer},
     ServerConfig as RustlsServerConfig,
+    pki_types::{CertificateDer, PrivateKeyDer, PrivatePkcs8KeyDer},
 };
 use socket2::{Domain, Protocol, SockAddr, Socket, Type};
 use tracing::{debug, warn};
 
 use crate::{
+    CONFIG,
     connection::{Connection, INIT_CONCURRENT_STREAMS},
     error::Error,
     utils::{self, CongestionController},
-    CONFIG,
 };
 
 pub struct Server {
@@ -106,7 +106,7 @@ impl Server {
             };
 
             let socket = Socket::new(domain, Type::DGRAM, Some(Protocol::UDP))
-                .map_err(|err| Error::Socket("failed to create endpoint UDP socket", err))?;
+                .context("failed to create endpoint UDP socket")?;
 
             if CONFIG.dual_stack {
                 socket.set_only_v6(!CONFIG.dual_stack).map_err(|err| {
@@ -116,7 +116,7 @@ impl Server {
 
             socket
                 .bind(&SockAddr::from(CONFIG.server))
-                .map_err(|err| Error::Socket("failed to bind endpoint UDP socket", err))?;
+                .context("failed to bind endpoint UDP socket")?;
 
             StdUdpSocket::from(socket)
         };

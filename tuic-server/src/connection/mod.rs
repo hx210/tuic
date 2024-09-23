@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    sync::{atomic::AtomicU32, Arc},
+    sync::{Arc, atomic::AtomicU32},
     time::Duration,
 };
 
@@ -9,10 +9,10 @@ use quinn::{Connecting, Connection as QuinnConnection, VarInt};
 use register_count::Counter;
 use tokio::{sync::RwLock as AsyncRwLock, time};
 use tracing::{debug, info, warn};
-use tuic_quinn::{side, Authenticate, Connection as Model};
+use tuic_quinn::{Authenticate, Connection as Model, side};
 
 use self::{authenticated::Authenticated, udp_session::UdpSession};
-use crate::{error::Error, restful, utils::UdpRelayMode, CONFIG};
+use crate::{CONFIG, error::Error, restful, utils::UdpRelayMode};
 
 mod authenticated;
 mod handle_stream;

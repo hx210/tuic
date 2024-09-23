@@ -13,7 +13,7 @@ use std::{
 use humantime::Duration as HumanDuration;
 use lexopt::{Arg, Error as ArgumentError, Parser};
 use log::LevelFilter;
-use serde::{de::Error as DeError, Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, de::Error as DeError};
 use serde_json::Error as SerdeError;
 use thiserror::Error;
 use uuid::Uuid;

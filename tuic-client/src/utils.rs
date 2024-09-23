@@ -6,7 +6,7 @@ use std::{
 };
 
 use anyhow::Context;
-use rustls::{pki_types::CertificateDer, RootCertStore};
+use rustls::{RootCertStore, pki_types::CertificateDer};
 use tokio::net;
 
 use crate::error::Error;

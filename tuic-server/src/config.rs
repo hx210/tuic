@@ -2,8 +2,8 @@ use std::{collections::HashMap, env::ArgsOs, net::SocketAddr, path::PathBuf, tim
 
 use educe::Educe;
 use figment::{
-    providers::{Format, Serialized, Toml},
     Figment,
+    providers::{Format, Serialized, Toml},
 };
 use lexopt::{Arg, Parser};
 use serde::{Deserialize, Serialize};

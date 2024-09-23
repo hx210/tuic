@@ -1,13 +1,13 @@
 use socks5_proto::{Address, Reply};
 use socks5_server::{
-    connection::{associate, bind, connect},
     Associate, Bind, Connect,
+    connection::{associate, bind, connect},
 };
 use tokio::io::{self, AsyncWriteExt};
 use tokio_util::compat::FuturesAsyncReadCompatExt;
 use tuic::Address as TuicAddress;
 
-use super::{udp_session::UdpSession, Server, UDP_SESSIONS};
+use super::{Server, UDP_SESSIONS, udp_session::UdpSession};
 use crate::connection::{Connection as TuicConnection, ERROR_CODE};
 
 impl Server {
