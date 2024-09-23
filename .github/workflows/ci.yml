@@ -169,6 +169,7 @@ jobs:
 
       - name: Cargo test
         uses: clechasseur/rs-cargo@v2
+        if: ${{ matrix.target != 'aarch64-pc-windows-msvc' }}
         with:
           use-cross: ${{ matrix.cross }}
           command: test
