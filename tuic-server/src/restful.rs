@@ -3,19 +3,19 @@ use std::{
     net::SocketAddr,
     ops::Deref,
     sync::{
-        atomic::{AtomicU64, Ordering},
         LazyLock,
+        atomic::{AtomicU64, Ordering},
     },
 };
 
 use axum::{
+    Json, Router,
     http::StatusCode,
     routing::{get, post},
-    Json, Router,
 };
 use axum_extra::{
-    headers::{authorization::Bearer, Authorization},
     TypedHeader,
+    headers::{Authorization, authorization::Bearer},
 };
 use chashmap::CHashMap;
 use lateinit::LateInit;

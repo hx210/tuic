@@ -9,15 +9,15 @@ use socket2::{Domain, Protocol, SockAddr, Socket, Type};
 use tokio::{
     net::UdpSocket,
     sync::{
-        oneshot::{self, Sender},
         RwLock as AsyncRwLock,
+        oneshot::{self, Sender},
     },
 };
 use tracing::warn;
 use tuic::Address;
 
 use super::Connection;
-use crate::{error::Error, CONFIG};
+use crate::{CONFIG, error::Error};
 
 #[derive(Clone)]
 pub struct UdpSession(Arc<UdpSessionInner>);

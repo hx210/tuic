@@ -8,7 +8,7 @@ use tracing::{debug, warn};
 use tuic_quinn::Task;
 
 use super::Connection;
-use crate::{error::Error, utils::UdpRelayMode, CONFIG};
+use crate::{CONFIG, error::Error, utils::UdpRelayMode};
 
 impl Connection {
     pub async fn handle_uni_stream(self, recv: RecvStream, _reg: Register) {

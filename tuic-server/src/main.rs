@@ -4,7 +4,7 @@
 use std::{env, process};
 
 use chrono::{Local, Offset, TimeZone};
-use config::{parse_config, Config};
+use config::{Config, parse_config};
 use lateinit::LateInit;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 

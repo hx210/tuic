@@ -1,6 +1,6 @@
 use std::{
     net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, UdpSocket},
-    sync::{atomic::AtomicU32, Arc},
+    sync::{Arc, atomic::AtomicU32},
     time::Duration,
 };
 
@@ -8,21 +8,21 @@ use anyhow::Context;
 use crossbeam_utils::atomic::AtomicCell;
 use once_cell::sync::OnceCell;
 use quinn::{
-    congestion::{BbrConfig, CubicConfig, NewRenoConfig},
-    crypto::rustls::QuicClientConfig,
     ClientConfig, Connection as QuinnConnection, Endpoint as QuinnEndpoint, EndpointConfig,
     TokioRuntime, TransportConfig, VarInt, ZeroRttAccepted,
+    congestion::{BbrConfig, CubicConfig, NewRenoConfig},
+    crypto::rustls::QuicClientConfig,
 };
 use register_count::Counter;
 use rustls::{
-    pki_types::{CertificateDer, ServerName, UnixTime},
     ClientConfig as RustlsClientConfig,
+    pki_types::{CertificateDer, ServerName, UnixTime},
 };
 use tokio::{
     sync::{OnceCell as AsyncOnceCell, RwLock as AsyncRwLock},
     time,
 };
-use tuic_quinn::{side, Connection as Model};
+use tuic_quinn::{Connection as Model, side};
 use uuid::Uuid;
 
 use crate::{

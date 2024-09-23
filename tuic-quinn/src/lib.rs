@@ -17,13 +17,13 @@ use quinn::{
 };
 use thiserror::Error;
 use tuic::{
+    Address, Header, UnmarshalError,
     model::{
-        side::{Rx, Tx},
         AssembleError, Authenticate as AuthenticateModel, Connect as ConnectModel,
         Connection as ConnectionModel, KeyingMaterialExporter as KeyingMaterialExporterImpl,
         Packet as PacketModel,
+        side::{Rx, Tx},
     },
-    Address, Header, UnmarshalError,
 };
 use uuid::Uuid;
 

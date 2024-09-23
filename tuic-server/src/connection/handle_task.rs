@@ -14,7 +14,7 @@ use tracing::{info, warn};
 use tuic::Address;
 use tuic_quinn::{Authenticate, Connect, Packet};
 
-use super::{Connection, UdpSession, ERROR_CODE};
+use super::{Connection, ERROR_CODE, UdpSession};
 use crate::{error::Error, utils::UdpRelayMode};
 
 impl Connection {
