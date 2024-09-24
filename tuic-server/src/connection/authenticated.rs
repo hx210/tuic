@@ -55,7 +55,7 @@ impl Authenticated {
             // auth packet)
             _ = rx.recv().await;
         }
-        // If the sender already empty, that's meaning set had been invoked
+        // If the `tx` already `None`, that's meaning `set` had been invoked
     }
 }
 

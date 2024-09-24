@@ -20,6 +20,7 @@ use axum_extra::{
 use chashmap::CHashMap;
 use lateinit::LateInit;
 use quinn::{Connection as QuinnConnection, VarInt};
+use serde_json::json;
 use tracing::warn;
 use uuid::Uuid;
 
@@ -27,6 +28,7 @@ use crate::CONFIG;
 
 static ONLINE_COUNTER: LateInit<HashMap<Uuid, AtomicU64>> = LateInit::new();
 static ONLINE_CLIENTS: LazyLock<CHashMap<Uuid, HashSet<QuicClient>>> = LazyLock::new(CHashMap::new);
+static TRAFFIC_STATS: LateInit<HashMap<Uuid, (AtomicU64, AtomicU64)>> = LateInit::new(); // (tx, rx)
 
 #[derive(Clone)]
 struct QuicClient(QuinnConnection);
@@ -59,14 +61,24 @@ pub async fn start() {
     for (user, _) in CONFIG.users.iter() {
         online.insert(user.to_owned(), AtomicU64::new(0));
     }
-    unsafe { ONLINE_COUNTER.init(online) };
+
+    let mut traffic = HashMap::new();
+    for (user, _) in CONFIG.users.iter() {
+        // TODO use persist
+        traffic.insert(user.to_owned(), (AtomicU64::new(0), AtomicU64::new(0)));
+    }
+    unsafe {
+        ONLINE_COUNTER.init(online);
+        TRAFFIC_STATS.init(traffic);
+    }
 
     let restful = CONFIG.restful.as_ref().unwrap();
     let addr = restful.addr;
     let app = Router::new()
         .route("/kick", post(kick))
         .route("/online", get(list_online))
-        .route("/detailed_online", get(list_detailed_online));
+        .route("/detailed_online", get(list_detailed_online))
+        .route("/traffic", get(list_traffic));
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     warn!("RESTful server started, listening on {addr}");
     axum::serve(listener, app).await.unwrap();
@@ -135,6 +147,28 @@ async fn list_detailed_online(
     (StatusCode::OK, Json(result))
 }
 
+async fn list_traffic(
+    token: Option<TypedHeader<Authorization<Bearer>>>,
+) -> (StatusCode, Json<HashMap<Uuid, serde_json::Value>>) {
+    if let Some(restful) = &CONFIG.restful
+        && !restful.secret.is_empty()
+        && let Some(TypedHeader(token)) = token
+        && restful.secret != token.token()
+    {
+        return (StatusCode::UNAUTHORIZED, Json(HashMap::new()));
+    }
+    let mut result = HashMap::new();
+    for (uuid, (tx, rx)) in TRAFFIC_STATS.iter() {
+        let tx = tx.load(Ordering::Relaxed);
+        let rx = rx.load(Ordering::Relaxed);
+        if tx != 0 || rx != 0 {
+            result.insert(*uuid, json!({"tx": tx, "rx":rx}));
+        }
+    }
+
+    (StatusCode::OK, Json(result))
+}
+
 pub async fn client_connect(uuid: &Uuid, conn: QuinnConnection) {
     if CONFIG.restful.is_none() {
         return;
@@ -164,8 +198,20 @@ pub async fn client_disconnect(uuid: &Uuid, conn: QuinnConnection) {
     ONLINE_COUNTER
         .get(uuid)
         .expect("Authorized UUID not present in users table")
-        .fetch_sub(1, Ordering::Release);
+        .fetch_sub(1, Ordering::SeqCst);
     if let Some(mut pair) = ONLINE_CLIENTS.get_mut(uuid).await {
         pair.remove(&conn.into());
+    }
+}
+
+pub fn traffic_tx(uuid: &Uuid, size: u64) {
+    if let Some((tx, _)) = TRAFFIC_STATS.get(uuid) {
+        tx.fetch_add(size, Ordering::SeqCst);
+    }
+}
+
+pub fn traffic_rx(uuid: &Uuid, size: u64) {
+    if let Some((__, rx)) = TRAFFIC_STATS.get(uuid) {
+        rx.fetch_add(size, Ordering::SeqCst);
     }
 }

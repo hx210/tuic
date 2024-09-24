@@ -25,6 +25,9 @@ pub struct Config {
     pub users: HashMap<Uuid, String>,
     pub tls: TlsConfig,
 
+    #[educe(Default = "./data.toml")]
+    pub persistent_data: PathBuf,
+
     #[educe(Default = None)]
     pub restful: Option<RestfulConfig>,
 
@@ -175,6 +178,7 @@ impl From<OldConfig> for Config {
                 receive_window: value.receive_window,
                 max_idle_time: value.max_idle_time,
             },
+            ..Default::default()
         }
     }
 }
