@@ -321,10 +321,10 @@ jobs:
 
       - name: Set version tag
         run: |
-          if [ $GITHUB_REF == refs/tags/v* ]; then
-            echo "TAG_VERSION=ghcr.io/${GITHUB_REPOSITORY_OWNER@L}/tuic-server:${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
-          else
+          if [ $GITHUB_REF == "refs/heads/dev" ]; then
             echo "TAG_VERSION=ghcr.io/${GITHUB_REPOSITORY_OWNER@L}/tuic-server:0.0.0" >> $GITHUB_ENV
+          else
+            echo "TAG_VERSION=ghcr.io/${GITHUB_REPOSITORY_OWNER@L}/tuic-server:${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
           fi
           echo "TAG_LATEST=ghcr.io/${GITHUB_REPOSITORY_OWNER@L}/tuic-server:latest" >> $GITHUB_ENV
 
@@ -336,3 +336,4 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: ${{ startsWith(github.ref, 'refs/tags/v') }}
           tags: ${{ env.TAG_VERSION }},${{ env.TAG_LATEST }}
+          provenance: false

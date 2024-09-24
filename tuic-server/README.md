@@ -185,23 +185,33 @@ Or with authorization disabled `curl  http://ip:port/path`
 
 APIs:
 - GET `http://ip:port/online`
-
+  > List online clients' count.
   Response: TODO
 
 - GET `http://ip:port/detailed_online`
-
+  > List online clients' IP address and port.
   Response: TODO
 
 - POST `http://ip:port/kick`
 
   Request: ["userA", "userB"]
+  > Clients can always reconnect after being kicked.
 
   Response: TODO
 
 - GET `http://ip:port/traffic`
 
+  Return current traffic stats.  
+  > Traffic data will be lost when `tuic-server` restarts.
+
   Response: TODO
 
+- GET `http://ip:port/reset_traffic`
+
+  Reset traffic stats and return previous traffic stats.
+  > Traffic data will be lost when `tuic-server` restarts.
+
+  Response: TODO
 
 ## License
 

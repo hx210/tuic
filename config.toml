@@ -19,8 +19,8 @@ private_key = ""
 alpn = ["h3"]
 
 [restful]
-addr = "[::]:8443"
-secret = "YOUR_SECRET_HERE"
+addr = "127.0.0.1:8443"
+secret = ""
 maximum_clients_per_user = 0
 
 [quic]
