@@ -78,7 +78,8 @@ pub async fn start() {
         .route("/kick", post(kick))
         .route("/online", get(list_online))
         .route("/detailed_online", get(list_detailed_online))
-        .route("/traffic", get(list_traffic));
+        .route("/traffic", get(list_traffic))
+        .route("/reset_traffic", get(reset_traffic));
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     warn!("RESTful server started, listening on {addr}");
     axum::serve(listener, app).await.unwrap();
@@ -161,6 +162,28 @@ async fn list_traffic(
     for (uuid, (tx, rx)) in TRAFFIC_STATS.iter() {
         let tx = tx.load(Ordering::Relaxed);
         let rx = rx.load(Ordering::Relaxed);
+        if tx != 0 || rx != 0 {
+            result.insert(*uuid, json!({"tx": tx, "rx":rx}));
+        }
+    }
+
+    (StatusCode::OK, Json(result))
+}
+
+async fn reset_traffic(
+    token: Option<TypedHeader<Authorization<Bearer>>>,
+) -> (StatusCode, Json<HashMap<Uuid, serde_json::Value>>) {
+    if let Some(restful) = &CONFIG.restful
+        && !restful.secret.is_empty()
+        && let Some(TypedHeader(token)) = token
+        && restful.secret != token.token()
+    {
+        return (StatusCode::UNAUTHORIZED, Json(HashMap::new()));
+    }
+    let mut result = HashMap::new();
+    for (uuid, (tx, rx)) in TRAFFIC_STATS.iter() {
+        let tx = tx.swap(0, Ordering::Relaxed);
+        let rx = rx.swap(0, Ordering::Relaxed);
         if tx != 0 || rx != 0 {
             result.insert(*uuid, json!({"tx": tx, "rx":rx}));
         }
