@@ -76,3 +76,38 @@ impl FromStr for CongestionController {
         }
     }
 }
+
+// pub trait ResultExt<T, E> {
+//     fn log_err(self) -> Option<T>;
+// }
+// impl<T> ResultExt<T, anyhow::Report> for Result<T, anyhow::Report>
+// {
+//     #[inline(always)]
+//     fn log_err(self) -> Option<T> {
+//         match self {
+//             Ok(v) => Some(v),
+//             Err(e) => {
+//                 tracing::error!("{:?}", e);
+//                 None
+//             }
+//         }
+//     }
+// }
+pub trait FutResultExt<T, E, Fut> {
+    async fn log_err(self) -> Option<T>;
+}
+impl<T, Fut> FutResultExt<T, anyhow::Report, Fut> for Fut
+where
+    Fut: std::future::Future<Output = Result<T, anyhow::Report>>,
+{
+    #[inline(always)]
+    async fn log_err(self) -> Option<T> {
+        match self.await {
+            Ok(v) => Some(v),
+            Err(e) => {
+                tracing::error!("{:?}", e);
+                None
+            }
+        }
+    }
+}

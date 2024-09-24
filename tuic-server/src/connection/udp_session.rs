@@ -17,7 +17,7 @@ use tracing::warn;
 use tuic::Address;
 
 use super::Connection;
-use crate::{CONFIG, error::Error};
+use crate::{CONFIG, error::Error, utils::FutResultExt};
 
 #[derive(Clone)]
 pub struct UdpSession(Arc<UdpSessionInner>);
@@ -107,11 +107,18 @@ impl UdpSession {
                     }
                 };
 
-                tokio::spawn(session_listening.0.conn.clone().relay_packet(
-                    pkt,
-                    Address::SocketAddress(addr),
-                    session_listening.0.assoc_id,
-                ));
+                tokio::spawn(
+                    session_listening
+                        .0
+                        .conn
+                        .clone()
+                        .relay_packet(
+                            pkt,
+                            Address::SocketAddress(addr),
+                            session_listening.0.assoc_id,
+                        )
+                        .log_err(),
+                );
             }
         };
 

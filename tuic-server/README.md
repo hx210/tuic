@@ -135,7 +135,7 @@ alpn = ["h3"] # Default: ["h3"]
 # See `RESTful API` section below in README.
 # If you want disable RESTful function, remove entire `restful` section.
 [restful] # Default: empty
-addr = "[::]:8443" # Default: "[::]:8443"
+addr = "127.0.0.1:8443" # Default: "127.0.0.1:8443"
 # Set secret to "" to disable authorization
 secret = "YOUR_SECRET_HERE" # Default: "YOUR_SECRET_HERE"
 
@@ -179,7 +179,9 @@ initial_window = 1048576 # Default: 1048576
 ```
 
 ## RESTful API
-Authorization header is NECESSARY when making a request. `curl -H 'Authorization: Bearer YOUR_SECRET_HERE' http://ip:port/path`
+Authorization header is NECESSARY when making a request. `curl -H 'Authorization: Bearer YOUR_SECRET_HERE' http://ip:port/path` 
+
+Or with authorization disabled `curl  http://ip:port/path`
 
 APIs:
 - GET `http://ip:port/online`
@@ -192,7 +194,13 @@ APIs:
 
 - POST `http://ip:port/kick`
 
-  Request ["userA", "userB"]
+  Request: ["userA", "userB"]
+
+  Response: TODO
+
+- GET `http://ip:port/traffic`
+
+  Response: TODO
 
 
 ## License

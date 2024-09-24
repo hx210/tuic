@@ -230,11 +230,13 @@ jobs:
           path: ./packages
 
       - name: Clean git tag & release
-        if: startsWith(github.ref, 'refs/heads/master')
+        if: startsWith(github.ref, 'refs/heads/dev')
         run: |
           # Deleted latest tag and push it
           git tag -d latest || true
           git push origin :refs/tags/latest || true
+          # Create local tag
+          git tag latest
           # Deleted all drafts
           gh release list | grep Draft |  awk '{print $1 " \t"}' |  while read -r line; do gh release delete -y "$line"; done
         env:
@@ -307,8 +309,8 @@ jobs:
 
       - name: Rename binary
         run: |
-          mv ./packages/clash-x86_64-unknown-linux-musl ./packages/tuic-server-amd64
-          mv ./packages/clash-aarch64-unknown-linux-musl ./packages/tuic-server-arm64
+          mv ./packages/tuic-server-x86_64-linux-musl ./packages/tuic-server-amd64
+          mv ./packages/tuic-server-aarch64-linux-musl ./packages/tuic-server-arm64
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -323,6 +325,7 @@ jobs:
             echo "TAG_VERSION=ghcr.io/${GITHUB_REPOSITORY_OWNER@L}/tuic-server:${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
           else
             echo "TAG_VERSION=ghcr.io/${GITHUB_REPOSITORY_OWNER@L}/tuic-server:0.0.0" >> $GITHUB_ENV
+          fi
           echo "TAG_LATEST=ghcr.io/${GITHUB_REPOSITORY_OWNER@L}/tuic-server:latest" >> $GITHUB_ENV
 
       - name: Build and push

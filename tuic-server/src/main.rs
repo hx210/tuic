@@ -59,7 +59,11 @@ async fn main() -> anyhow::Result<()> {
                 )),
         )
         .try_init()?;
-
+    tokio::spawn(async {
+        tokio::signal::ctrl_c()
+            .await
+            .expect("failed to listen for event");
+    });
     match Server::init() {
         Ok(server) => server.start().await,
         Err(err) => {
