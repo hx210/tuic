@@ -130,7 +130,7 @@ certificate = "" # Default: ""
 private_key = "" # Default: ""
 
 # Application layer protocol negotiation
-alpn = ["h3"] # Default: ["h3"]
+alpn = ["h3"] # Default: empty
 
 # See `RESTful API` section below in README.
 # If you want disable RESTful function, remove entire `restful` section.

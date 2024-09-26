@@ -69,7 +69,7 @@ pub struct TlsConfig {
     pub self_sign: bool,
     pub certificate: PathBuf,
     pub private_key: PathBuf,
-    #[educe(Default(expression = vec!["h3".into()]))]
+    #[educe(Default(expression = Vec::new()))]
     pub alpn: Vec<String>,
 }
 
