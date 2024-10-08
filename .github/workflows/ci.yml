@@ -324,7 +324,7 @@ jobs:
 
       - name: Set version tag
         run: |
-          if [ $GITHUB_REF == "refs/heads/dev" ]; then
+          if [[ $GITHUB_REF == refs/heads/dev ]] || [[ $GITHUB_REF == refs/pull/*/merge ]]; then
             echo "TAG_VERSION=ghcr.io/${GITHUB_REPOSITORY_OWNER@L}/tuic-server:0.0.0" >> $GITHUB_ENV
           else
             echo "TAG_VERSION=ghcr.io/${GITHUB_REPOSITORY_OWNER@L}/tuic-server:${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
