@@ -228,12 +228,18 @@ pub async fn client_disconnect(uuid: &Uuid, conn: QuinnConnection) {
 }
 
 pub fn traffic_tx(uuid: &Uuid, size: u64) {
+    if CONFIG.restful.is_none() {
+        return;
+    }
     if let Some((tx, _)) = TRAFFIC_STATS.get(uuid) {
         tx.fetch_add(size, Ordering::SeqCst);
     }
 }
 
 pub fn traffic_rx(uuid: &Uuid, size: u64) {
+    if CONFIG.restful.is_none() {
+        return;
+    }
     if let Some((__, rx)) = TRAFFIC_STATS.get(uuid) {
         rx.fetch_add(size, Ordering::SeqCst);
     }
