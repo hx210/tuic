@@ -1,7 +1,7 @@
 use std::{
     io::Error as IoError,
     net::{Ipv4Addr, Ipv6Addr, SocketAddr, UdpSocket as StdUdpSocket},
-    sync::Arc,
+    sync::{Arc, Weak},
 };
 
 use bytes::Bytes;
@@ -13,16 +13,13 @@ use tokio::{
         oneshot::{self, Sender},
     },
 };
-use tracing::warn;
+use tracing::{trace, warn};
 use tuic::Address;
 
 use super::Connection;
 use crate::{CONFIG, error::Error, utils::FutResultExt};
 
-#[derive(Clone)]
-pub struct UdpSession(Arc<UdpSessionInner>);
-
-struct UdpSessionInner {
+pub struct UdpSession {
     assoc_id: u16,
     conn: Connection,
     socket_v4: UdpSocket,
@@ -31,7 +28,8 @@ struct UdpSessionInner {
 }
 
 impl UdpSession {
-    pub fn new(conn: Connection, assoc_id: u16) -> Result<Self, Error> {
+    // spawn a task which actually owns itself, then return its wake reference.
+    pub fn new(conn: Connection, assoc_id: u16) -> Result<Weak<Self>, Error> {
         let socket_v4 = {
             let socket = Socket::new(Domain::IPV4, Type::DGRAM, Some(Protocol::UDP))
                 .map_err(|err| Error::Socket("failed to create UDP associate IPv4 socket", err))?;
@@ -82,26 +80,27 @@ impl UdpSession {
 
         let (tx, rx) = oneshot::channel();
 
-        let session = Self(Arc::new(UdpSessionInner {
+        let session = Arc::new(Self {
             conn,
             assoc_id,
             socket_v4,
             socket_v6,
             close: AsyncRwLock::new(Some(tx)),
-        }));
+        });
 
         let session_listening = session.clone();
         let listen = async move {
             loop {
+                // UdpSession's real owner.
                 let (pkt, addr) = match session_listening.recv().await {
                     Ok(res) => res,
                     Err(err) => {
                         warn!(
                             "[{id:#010x}] [{addr}] [{user}] [packet] [{assoc_id:#06x}] outbound \
                              listening error: {err}",
-                            id = session_listening.0.conn.id(),
-                            addr = session_listening.0.conn.inner.remote_address(),
-                            user = session_listening.0.conn.auth,
+                            id = session_listening.conn.id(),
+                            addr = session_listening.conn.inner.remote_address(),
+                            user = session_listening.conn.auth,
                         );
                         continue;
                     }
@@ -109,13 +108,12 @@ impl UdpSession {
 
                 tokio::spawn(
                     session_listening
-                        .0
                         .conn
                         .clone()
                         .relay_packet(
                             pkt,
                             Address::SocketAddress(addr),
-                            session_listening.0.assoc_id,
+                            session_listening.assoc_id,
                         )
                         .log_err(),
                 );
@@ -129,14 +127,13 @@ impl UdpSession {
             }
         });
 
-        Ok(session)
+        Ok(Arc::downgrade(&session))
     }
 
     pub async fn send(&self, pkt: Bytes, addr: SocketAddr) -> Result<(), Error> {
         let socket = match addr {
-            SocketAddr::V4(_) => &self.0.socket_v4,
+            SocketAddr::V4(_) => &self.socket_v4,
             SocketAddr::V6(_) => self
-                .0
                 .socket_v6
                 .as_ref()
                 .ok_or_else(|| Error::UdpRelayIpv6Disabled(addr))?,
@@ -154,17 +151,28 @@ impl UdpSession {
             Ok((Bytes::from(buf), addr))
         }
 
-        if let Some(socket_v6) = &self.0.socket_v6 {
+        if let Some(socket_v6) = &self.socket_v6 {
             tokio::select! {
-                res = recv(&self.0.socket_v4) => res,
+                res = recv(&self.socket_v4) => res,
                 res = recv(socket_v6) => res,
             }
         } else {
-            recv(&self.0.socket_v4).await
+            recv(&self.socket_v4).await
         }
     }
 
     pub async fn close(&self) {
-        let _ = self.0.close.write().await.take().unwrap().send(());
+        let _ = self.close.write().await.take().unwrap().send(());
+    }
+}
+
+impl Drop for UdpSession {
+    fn drop(&mut self) {
+        trace!(
+            "[{id:#010x}] [{addr}] [{user}] udp session get dropped",
+            id = self.conn.id(),
+            addr = self.conn.inner.remote_address(),
+            user = self.conn.auth,
+        );
     }
 }

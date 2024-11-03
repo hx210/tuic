@@ -1,10 +1,10 @@
 use std::{
     collections::hash_map::Entry,
     io::{Error as IoError, ErrorKind},
-    net::SocketAddr,
+    net::SocketAddr
 };
 
-use anyhow::OptionExt;
+use eyre::{eyre, OptionExt};
 use bytes::Bytes;
 use tokio::{
     io::{self, AsyncWriteExt},
@@ -154,7 +154,12 @@ impl Connection {
                 )));
             };
             restful::traffic_tx(&self.auth.get().unwrap(), pkt.len() as u64);
-            session.send(pkt, socket_addr).await
+            if let Some(session) = session.upgrade() {
+                session.send(pkt, socket_addr).await
+            } else {
+                Err(eyre!("UdpSession dropped already").into())
+            }
+            
         };
 
         if let Err(err) = process.await {
@@ -177,7 +182,8 @@ impl Connection {
             user = self.auth,
         );
 
-        if let Some(session) = self.udp_sessions.write().await.remove(&assoc_id) {
+        if let Some(session) = self.udp_sessions.write().await.remove(&assoc_id)
+        && let Some(session) = session.upgrade() {
             session.close().await;
         }
     }
