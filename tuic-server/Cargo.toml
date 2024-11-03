@@ -55,7 +55,7 @@ tracing = "0.1"
 
 # Error handling
 thiserror = { version = "1", default-features = false }
-anyhow = { package = "eyre",  version= "0.6" }
+eyre = { version = "0.6" }
 
 # Web
 axum = { version = "0.7", features = ["json", "tokio"] }

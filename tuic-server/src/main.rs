@@ -21,7 +21,7 @@ mod utils;
 pub static CONFIG: LateInit<Config> = LateInit::new();
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn main() -> eyre::Result<()> {
     let cfg = match parse_config(env::args_os()).await {
         Ok(cfg) => cfg,
         Err(ConfigError::Version(msg) | ConfigError::Help(msg)) => {

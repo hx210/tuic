@@ -196,7 +196,7 @@ impl Connection {
         pkt: Bytes,
         addr: Address,
         assoc_id: u16,
-    ) -> anyhow::Result<()> {
+    ) -> eyre::Result<()> {
         let addr_display = addr.to_string();
 
         info!(
