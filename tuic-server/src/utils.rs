@@ -5,8 +5,8 @@ use std::{
     str::FromStr,
 };
 
-use eyre::Context;
 use educe::Educe;
+use eyre::Context;
 use rustls::pki_types::{CertificateDer, PrivateKeyDer, PrivatePkcs8KeyDer};
 use serde::{Deserialize, Serialize};
 

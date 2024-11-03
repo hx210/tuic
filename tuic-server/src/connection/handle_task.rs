@@ -1,11 +1,11 @@
 use std::{
     collections::hash_map::Entry,
     io::{Error as IoError, ErrorKind},
-    net::SocketAddr
+    net::SocketAddr,
 };
 
-use eyre::{eyre, OptionExt};
 use bytes::Bytes;
+use eyre::{OptionExt, eyre};
 use tokio::{
     io::{self, AsyncWriteExt},
     net::{self, TcpStream},
@@ -159,7 +159,6 @@ impl Connection {
             } else {
                 Err(eyre!("UdpSession dropped already").into())
             }
-            
         };
 
         if let Err(err) = process.await {
@@ -183,7 +182,8 @@ impl Connection {
         );
 
         if let Some(session) = self.udp_sessions.write().await.remove(&assoc_id)
-        && let Some(session) = session.upgrade() {
+            && let Some(session) = session.upgrade()
+        {
             session.close().await;
         }
     }
@@ -197,12 +197,7 @@ impl Connection {
         );
     }
 
-    pub async fn relay_packet(
-        self,
-        pkt: Bytes,
-        addr: Address,
-        assoc_id: u16,
-    ) -> eyre::Result<()> {
+    pub async fn relay_packet(self, pkt: Bytes, addr: Address, assoc_id: u16) -> eyre::Result<()> {
         let addr_display = addr.to_string();
 
         info!(
