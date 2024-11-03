@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    sync::{Arc, atomic::AtomicU32},
+    sync::{Arc, Weak, atomic::AtomicU32},
     time::Duration,
 };
 
@@ -27,7 +27,7 @@ pub struct Connection {
     inner: QuinnConnection,
     model: Model<side::Server>,
     auth: Authenticated,
-    udp_sessions: Arc<AsyncRwLock<HashMap<u16, UdpSession>>>,
+    udp_sessions: Arc<AsyncRwLock<HashMap<u16, Weak<UdpSession>>>>,
     udp_relay_mode: Arc<ArcSwap<Option<UdpRelayMode>>>,
     remote_uni_stream_cnt: Counter,
     remote_bi_stream_cnt: Counter,
