@@ -33,7 +33,7 @@ pub enum Error {
     #[error("failed sending packet to {0}: relaying IPv6 UDP packet is disabled")]
     UdpRelayIpv6Disabled(SocketAddr),
     #[error(transparent)]
-    Other(#[from] anyhow::Error),
+    Other(#[from] eyre::Report),
 }
 
 impl Error {

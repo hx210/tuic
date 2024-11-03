@@ -3,7 +3,7 @@ use std::{
     sync::Arc,
 };
 
-use anyhow::Context;
+use eyre::Context;
 use quinn::{
     Endpoint, EndpointConfig, IdleTimeout, ServerConfig, TokioRuntime, TransportConfig, VarInt,
     congestion::{BbrConfig, CubicConfig, NewRenoConfig},

@@ -5,12 +5,12 @@ use std::{
     str::FromStr,
 };
 
-use anyhow::Context;
+use eyre::Context;
 use educe::Educe;
 use rustls::pki_types::{CertificateDer, PrivateKeyDer, PrivatePkcs8KeyDer};
 use serde::{Deserialize, Serialize};
 
-pub fn load_cert_chain(cert_path: &Path) -> anyhow::Result<Vec<CertificateDer<'static>>> {
+pub fn load_cert_chain(cert_path: &Path) -> eyre::Result<Vec<CertificateDer<'static>>> {
     let cert_chain = fs::read(cert_path).context("failed to read certificate chain")?;
     let cert_chain = if cert_path.extension().map_or(false, |x| x == "der") {
         vec![CertificateDer::from(cert_chain)]
@@ -22,14 +22,14 @@ pub fn load_cert_chain(cert_path: &Path) -> anyhow::Result<Vec<CertificateDer<'s
     Ok(cert_chain)
 }
 
-pub fn load_priv_key(key_path: &Path) -> anyhow::Result<PrivateKeyDer<'static>> {
+pub fn load_priv_key(key_path: &Path) -> eyre::Result<PrivateKeyDer<'static>> {
     let key = fs::read(key_path).context("failed to read private key")?;
     let key = if key_path.extension().map_or(false, |x| x == "der") {
         PrivateKeyDer::Pkcs8(PrivatePkcs8KeyDer::from(key))
     } else {
         rustls_pemfile::private_key(&mut &*key)
             .context("malformed PKCS #1 private key")?
-            .ok_or_else(|| anyhow::Error::msg("no private keys found"))?
+            .ok_or_else(|| eyre::Error::msg("no private keys found"))?
     };
     Ok(key)
 }
@@ -96,9 +96,9 @@ impl FromStr for CongestionController {
 pub trait FutResultExt<T, E, Fut> {
     async fn log_err(self) -> Option<T>;
 }
-impl<T, Fut> FutResultExt<T, anyhow::Report, Fut> for Fut
+impl<T, Fut> FutResultExt<T, eyre::Report, Fut> for Fut
 where
-    Fut: std::future::Future<Output = Result<T, anyhow::Report>>,
+    Fut: std::future::Future<Output = Result<T, eyre::Report>>,
 {
     #[inline(always)]
     async fn log_err(self) -> Option<T> {
