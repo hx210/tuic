@@ -96,7 +96,10 @@ impl UdpSession {
                 tokio::select! {
                     recv = session_listening.recv() => next = recv,
                     // Avoid client didn't send `UDP-DROP` properly
-                    _ = timeout.tick() => break,
+                    _ = timeout.tick() => {
+                        session_listening.close().await;
+                        break
+                    },
                     // `UDP-DROP`
                     _ = &mut rx => break
                 }
@@ -166,7 +169,9 @@ impl UdpSession {
     }
 
     pub async fn close(&self) {
-        let _ = self.close.write().await.take().unwrap().send(());
+        if let Some(v) = self.close.write().await.take() {
+            _ = v.send(());
+        }
     }
 }
 
