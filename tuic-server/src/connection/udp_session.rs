@@ -8,10 +8,7 @@ use bytes::Bytes;
 use socket2::{Domain, Protocol, SockAddr, Socket, Type};
 use tokio::{
     net::UdpSocket,
-    sync::{
-        RwLock as AsyncRwLock,
-        oneshot,
-    },
+    sync::{RwLock as AsyncRwLock, oneshot},
 };
 use tracing::{trace, warn};
 use tuic::Address;
@@ -92,12 +89,18 @@ impl UdpSession {
         // UdpSession's real owner.
         let listen = async move {
             let mut rx = rx;
+            let mut timeout = tokio::time::interval(CONFIG.gc_lifetime);
+
             loop {
                 let next;
                 tokio::select! {
                     recv = session_listening.recv() => next = recv,
+                    // Avoid client didn't send `UDP-DROP` properly
+                    _ = timeout.tick() => break,
+                    // `UDP-DROP`
                     _ = &mut rx => break
                 }
+                timeout.reset();
                 let (pkt, addr) = match next {
                     Ok(v) => v,
                     Err(err) => {
