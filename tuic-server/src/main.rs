@@ -22,6 +22,7 @@ pub static CONFIG: LateInit<Config> = LateInit::new();
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
+    std::env::set_var("RUST_BACKTRACE", "1");
     let cfg = match parse_config(env::args_os()).await {
         Ok(cfg) => cfg,
         Err(ConfigError::Version(msg) | ConfigError::Help(msg)) => {
@@ -59,17 +60,17 @@ async fn main() -> eyre::Result<()> {
                 )),
         )
         .try_init()?;
-    tokio::spawn(async {
-        tokio::signal::ctrl_c()
-            .await
-            .expect("failed to listen for event");
-    });
-    match Server::init() {
-        Ok(server) => server.start().await,
-        Err(err) => {
-            eprintln!("{err}");
-            process::exit(1);
+    tokio::spawn(async move {
+        match Server::init() {
+            Ok(server) => server.start().await,
+            Err(err) => {
+                eprintln!("{err}");
+                process::exit(1);
+            }
         }
-    }
+    });
+    tokio::signal::ctrl_c()
+        .await
+        .expect("failed to listen for event");
     Ok(())
 }

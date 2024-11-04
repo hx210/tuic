@@ -54,7 +54,7 @@ pub struct Config {
     #[educe(Default(expression = Duration::from_millis(3000)))]
     pub gc_interval: Duration,
 
-    #[serde(with = "humantime_serde")]
+    #[serde(alias = "gc_lifetime", with = "humantime_serde")]
     #[educe(Default(expression = Duration::from_millis(15000)))]
     pub gc_lifetime: Duration,
 
