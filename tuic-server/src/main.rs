@@ -6,6 +6,7 @@ use std::{env, process};
 use chrono::{Local, Offset, TimeZone};
 use config::{Config, parse_config};
 use lateinit::LateInit;
+use tracing::level_filters::LevelFilter;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::{old_config::ConfigError, server::Server};
@@ -37,7 +38,13 @@ async fn main() -> eyre::Result<()> {
     unsafe {
         CONFIG.init(cfg);
     }
-    let filter = tracing_subscriber::filter::Targets::new().with_default(CONFIG.log_level);
+    let filter = tracing_subscriber::filter::Targets::new()
+        .with_targets(vec![
+            ("tuic", CONFIG.log_level),
+            ("tuic_quinn", CONFIG.log_level),
+            ("tuic_server", CONFIG.log_level),
+        ])
+        .with_default(LevelFilter::INFO);
     let registry = tracing_subscriber::registry();
     registry
         .with(filter)
