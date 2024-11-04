@@ -10,7 +10,7 @@ use tokio::{
     net::UdpSocket,
     sync::{
         RwLock as AsyncRwLock,
-        oneshot::{self, Sender},
+        oneshot,
     },
 };
 use tracing::{trace, warn};
@@ -24,7 +24,7 @@ pub struct UdpSession {
     conn: Connection,
     socket_v4: UdpSocket,
     socket_v6: Option<UdpSocket>,
-    close: AsyncRwLock<Option<Sender<()>>>,
+    close: AsyncRwLock<Option<oneshot::Sender<()>>>,
 }
 
 impl UdpSession {
@@ -89,11 +89,17 @@ impl UdpSession {
         });
 
         let session_listening = session.clone();
+        // UdpSession's real owner.
         let listen = async move {
+            let mut rx = rx;
             loop {
-                // UdpSession's real owner.
-                let (pkt, addr) = match session_listening.recv().await {
-                    Ok(res) => res,
+                let next;
+                tokio::select! {
+                    recv = session_listening.recv() => next = recv,
+                    _ = &mut rx => break
+                }
+                let (pkt, addr) = match next {
+                    Ok(v) => v,
                     Err(err) => {
                         warn!(
                             "[{id:#010x}] [{addr}] [{user}] [packet] [{assoc_id:#06x}] outbound \
@@ -120,12 +126,7 @@ impl UdpSession {
             }
         };
 
-        tokio::spawn(async move {
-            tokio::select! {
-                _ = listen => unreachable!(),
-                _ = rx => {},
-            }
-        });
+        tokio::spawn(listen);
 
         Ok(Arc::downgrade(&session))
     }
