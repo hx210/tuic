@@ -10,7 +10,7 @@ use tokio::{
     net::UdpSocket,
     sync::{RwLock as AsyncRwLock, oneshot},
 };
-use tracing::{trace, warn};
+use tracing::{debug, warn};
 use tuic::Address;
 
 use super::Connection;
@@ -98,7 +98,13 @@ impl UdpSession {
                     // Avoid client didn't send `UDP-DROP` properly
                     _ = timeout.tick() => {
                         session_listening.close().await;
-                        break
+                        warn!(
+                            "[{id:#010x}] [{addr}] [{user}] [packet] [{assoc_id:#06x}] UDP session timeout",
+                            id = session_listening.conn.id(),
+                            addr = session_listening.conn.inner.remote_address(),
+                            user = session_listening.conn.auth,
+                        );
+                        continue;
                     },
                     // `UDP-DROP`
                     _ = &mut rx => break
@@ -130,10 +136,15 @@ impl UdpSession {
                         .log_err(),
                 );
             }
+            session_listening
+                .conn
+                .udp_sessions
+                .write()
+                .await
+                .remove(&assoc_id);
         };
 
         tokio::spawn(listen);
-
         Ok(Arc::downgrade(&session))
     }
 
@@ -177,7 +188,7 @@ impl UdpSession {
 
 impl Drop for UdpSession {
     fn drop(&mut self) {
-        trace!(
+        debug!(
             "[{id:#010x}] [{addr}] [{user}] udp session get dropped",
             id = self.conn.id(),
             addr = self.conn.inner.remote_address(),
