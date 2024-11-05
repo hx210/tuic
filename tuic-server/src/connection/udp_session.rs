@@ -90,6 +90,7 @@ impl UdpSession {
         let listen = async move {
             let mut rx = rx;
             let mut timeout = tokio::time::interval(CONFIG.gc_lifetime);
+            timeout.reset();
 
             loop {
                 let next;
