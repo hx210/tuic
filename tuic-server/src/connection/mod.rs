@@ -12,7 +12,7 @@ use tracing::{debug, info, warn};
 use tuic_quinn::{Authenticate, Connection as Model, side};
 
 use self::{authenticated::Authenticated, udp_session::UdpSession};
-use crate::{CONFIG, error::Error, restful, utils::UdpRelayMode};
+use crate::{AppContext, error::Error, restful, utils::UdpRelayMode};
 
 mod authenticated;
 mod handle_stream;
@@ -24,6 +24,7 @@ pub const INIT_CONCURRENT_STREAMS: u32 = 32;
 
 #[derive(Clone)]
 pub struct Connection {
+    ctx: Arc<AppContext>,
     inner: QuinnConnection,
     model: Model<side::Server>,
     auth: Authenticated,
@@ -37,11 +38,11 @@ pub struct Connection {
 
 #[allow(clippy::too_many_arguments)]
 impl Connection {
-    pub async fn handle(conn: Connecting) {
+    pub async fn handle(ctx: Arc<AppContext>, conn: Connecting) {
         let addr = conn.remote_address();
 
         let init = async {
-            let conn = if CONFIG.zero_rtt_handshake {
+            let conn = if ctx.cfg.zero_rtt_handshake {
                 match conn.into_0rtt() {
                     Ok((conn, _)) => conn,
                     Err(conn) => conn.await?,
@@ -50,7 +51,7 @@ impl Connection {
                 conn.await?
             };
 
-            Ok::<_, Error>(Self::new(conn))
+            Ok::<_, Error>(Self::new(ctx.clone(), conn))
         };
 
         match init.await {
@@ -60,8 +61,7 @@ impl Connection {
                     id = conn.id(),
                     user = conn.auth,
                 );
-
-                tokio::spawn(conn.clone().timeout_authenticate(CONFIG.auth_timeout));
+                tokio::spawn(conn.clone().timeout_authenticate(ctx.cfg.auth_timeout));
                 tokio::spawn(conn.clone().collect_garbage());
 
                 loop {
@@ -114,8 +114,9 @@ impl Connection {
         }
     }
 
-    fn new(conn: QuinnConnection) -> Self {
+    fn new(ctx: Arc<AppContext>, conn: QuinnConnection) -> Self {
         Self {
+            ctx,
             inner: conn.clone(),
             model: Model::<side::Server>::new(conn),
             auth: Authenticated::new(),
@@ -131,10 +132,12 @@ impl Connection {
     async fn authenticate(&self, auth: &Authenticate) -> Result<(), Error> {
         if self.auth.get().is_some() {
             Err(Error::DuplicatedAuth)
-        } else if CONFIG
+        } else if self
+            .ctx
+            .cfg
             .users
             .get(&auth.uuid())
-            .map_or(false, |password| auth.validate(password))
+            .is_some_and(|password| auth.validate(password))
         {
             self.auth.set(auth.uuid()).await;
             Ok(())
@@ -148,7 +151,7 @@ impl Connection {
 
         match self.auth.get() {
             Some(uuid) => {
-                restful::client_connect(&uuid, self.inner).await;
+                restful::client_connect(&self.ctx, &uuid, self.inner).await;
             }
             None => {
                 warn!(
@@ -163,11 +166,11 @@ impl Connection {
 
     async fn collect_garbage(self) {
         loop {
-            time::sleep(CONFIG.gc_interval).await;
+            time::sleep(self.ctx.cfg.gc_interval).await;
 
             if self.is_closed() {
                 if let Some(uuid) = self.auth.get() {
-                    restful::client_disconnect(&uuid, self.inner).await;
+                    restful::client_disconnect(&self.ctx, &uuid, self.inner).await;
                 }
                 break;
             }
@@ -178,7 +181,7 @@ impl Connection {
                 addr = self.inner.remote_address(),
                 user = self.auth,
             );
-            self.model.collect_garbage(CONFIG.gc_lifetime);
+            self.model.collect_garbage(self.ctx.cfg.gc_lifetime);
         }
     }
 

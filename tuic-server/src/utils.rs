@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 
 pub fn load_cert_chain(cert_path: &Path) -> eyre::Result<Vec<CertificateDer<'static>>> {
     let cert_chain = fs::read(cert_path).context("failed to read certificate chain")?;
-    let cert_chain = if cert_path.extension().map_or(false, |x| x == "der") {
+    let cert_chain = if cert_path.extension().is_some_and(|x| x == "der") {
         vec![CertificateDer::from(cert_chain)]
     } else {
         rustls_pemfile::certs(&mut &*cert_chain)
@@ -24,7 +24,7 @@ pub fn load_cert_chain(cert_path: &Path) -> eyre::Result<Vec<CertificateDer<'sta
 
 pub fn load_priv_key(key_path: &Path) -> eyre::Result<PrivateKeyDer<'static>> {
     let key = fs::read(key_path).context("failed to read private key")?;
-    let key = if key_path.extension().map_or(false, |x| x == "der") {
+    let key = if key_path.extension().is_some_and(|x| x == "der") {
         PrivateKeyDer::Pkcs8(PrivatePkcs8KeyDer::from(key))
     } else {
         rustls_pemfile::private_key(&mut &*key)
