@@ -68,8 +68,8 @@ impl Connection {
                 // a <- b rx
                 let (tx, rx) = res?;
                 let uuid = self.auth.get().unwrap();
-                restful::traffic_tx(&uuid, tx);
-                restful::traffic_rx(&uuid, rx);
+                restful::traffic_tx(&self.ctx, &uuid, tx);
+                restful::traffic_rx(&self.ctx, &uuid, rx);
                 Ok::<_, Error>(())
             } else {
                 let _ = conn.compat().shutdown().await;
@@ -140,7 +140,7 @@ impl Connection {
                 None => match self.udp_sessions.write().await.entry(assoc_id) {
                     Entry::Occupied(entry) => entry.get().clone(),
                     Entry::Vacant(entry) => {
-                        let session = UdpSession::new(self.clone(), assoc_id)?;
+                        let session = UdpSession::new(self.ctx.clone(), self.clone(), assoc_id)?;
                         entry.insert(session.clone());
                         session
                     }
@@ -153,7 +153,7 @@ impl Connection {
                     "no address resolved",
                 )));
             };
-            restful::traffic_tx(&self.auth.get().unwrap(), pkt.len() as u64);
+            restful::traffic_tx(&self.ctx, &self.auth.get().unwrap(), pkt.len() as u64);
             if let Some(session) = session.upgrade() {
                 session.send(pkt, socket_addr).await
             } else {
@@ -210,6 +210,7 @@ impl Connection {
         );
 
         restful::traffic_rx(
+            &self.ctx,
             &self.auth.get().ok_or_eyre("Unreachable")?,
             pkt.len() as u64,
         );

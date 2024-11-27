@@ -14,9 +14,10 @@ use tracing::{debug, warn};
 use tuic::Address;
 
 use super::Connection;
-use crate::{CONFIG, error::Error, utils::FutResultExt};
+use crate::{AppContext, error::Error, utils::FutResultExt};
 
 pub struct UdpSession {
+    ctx: Arc<AppContext>,
     assoc_id: u16,
     conn: Connection,
     socket_v4: UdpSocket,
@@ -26,7 +27,7 @@ pub struct UdpSession {
 
 impl UdpSession {
     // spawn a task which actually owns itself, then return its wake reference.
-    pub fn new(conn: Connection, assoc_id: u16) -> Result<Weak<Self>, Error> {
+    pub fn new(ctx: Arc<AppContext>, conn: Connection, assoc_id: u16) -> Result<Weak<Self>, Error> {
         let socket_v4 = {
             let socket = Socket::new(Domain::IPV4, Type::DGRAM, Some(Protocol::UDP))
                 .map_err(|err| Error::Socket("failed to create UDP associate IPv4 socket", err))?;
@@ -48,7 +49,7 @@ impl UdpSession {
             UdpSocket::from_std(StdUdpSocket::from(socket))?
         };
 
-        let socket_v6 = if CONFIG.udp_relay_ipv6 {
+        let socket_v6 = if ctx.cfg.udp_relay_ipv6 {
             let socket = Socket::new(Domain::IPV6, Type::DGRAM, Some(Protocol::UDP))
                 .map_err(|err| Error::Socket("failed to create UDP associate IPv6 socket", err))?;
 
@@ -78,6 +79,7 @@ impl UdpSession {
         let (tx, rx) = oneshot::channel();
 
         let session = Arc::new(Self {
+            ctx: ctx.clone(),
             conn,
             assoc_id,
             socket_v4,
@@ -89,7 +91,7 @@ impl UdpSession {
         // UdpSession's real owner.
         let listen = async move {
             let mut rx = rx;
-            let mut timeout = tokio::time::interval(CONFIG.gc_lifetime);
+            let mut timeout = tokio::time::interval(ctx.cfg.gc_lifetime);
             timeout.reset();
 
             loop {
@@ -163,12 +165,12 @@ impl UdpSession {
     }
 
     async fn recv(&self) -> Result<(Bytes, SocketAddr), IoError> {
-        async fn recv(socket: &UdpSocket) -> Result<(Bytes, SocketAddr), IoError> {
-            let mut buf = vec![0u8; CONFIG.max_external_packet_size];
+        let recv = async |socket: &UdpSocket| -> Result<(Bytes, SocketAddr), IoError> {
+            let mut buf = vec![0u8; self.ctx.cfg.max_external_packet_size];
             let (n, addr) = socket.recv_from(&mut buf).await?;
             buf.truncate(n);
             Ok((Bytes::from(buf), addr))
-        }
+        };
 
         if let Some(socket_v6) = &self.socket_v6 {
             tokio::select! {
