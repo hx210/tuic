@@ -18,7 +18,7 @@ Download the latest binary from [releases](https://github.com/Itsusinn/tuic/rele
 Or install from [crates.io](https://crates.io/crates/tuic-server):
 
 ```bash
-cargo install tuic-server
+cargo install --git https://github.com/Itsusinn/tuic.git tuic-server
 ```
 
 Run the TUIC server with configuration file:
@@ -179,7 +179,7 @@ initial_window = 1048576 # Default: 1048576
 ```
 
 ## RESTful API
-Authorization header is NECESSARY when making a request. `curl -H 'Authorization: Bearer YOUR_SECRET_HERE' http://ip:port/path` 
+With authorization header when making a request. `curl -H 'Authorization: Bearer YOUR_SECRET_HERE' http://ip:port/path` 
 
 Or with authorization disabled `curl  http://ip:port/path`
 

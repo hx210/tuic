@@ -16,7 +16,7 @@ pub fn load_certs(paths: Vec<PathBuf>, disable_native: bool) -> Result<RootCertS
 
     for cert_path in &paths {
         let cert_chain = fs::read(cert_path).context("failed to read certificate chain")?;
-        let cert_chain = if cert_path.extension().map_or(false, |x| x == "der") {
+        let cert_chain = if cert_path.extension().is_some_and(|x| x == "der") {
             vec![CertificateDer::from(cert_chain)]
         } else {
             rustls_pemfile::certs(&mut &*cert_chain)
