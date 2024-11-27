@@ -1,11 +1,10 @@
 #![feature(trivial_bounds)]
-#![feature(let_chains)]
+#![feature(let_chains, async_closure)]
 
-use std::{env, process};
+use std::{env, process, sync::Arc};
 
 use chrono::{Local, Offset, TimeZone};
 use config::{Config, parse_config};
-use lateinit::LateInit;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -19,7 +18,9 @@ mod restful;
 mod server;
 mod utils;
 
-pub static CONFIG: LateInit<Config> = LateInit::new();
+struct AppContext {
+    pub cfg: Config,
+}
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
@@ -35,14 +36,13 @@ async fn main() -> eyre::Result<()> {
             process::exit(1);
         }
     };
-    unsafe {
-        CONFIG.init(cfg);
-    }
+    let ctx = Arc::new(AppContext { cfg });
+
     let filter = tracing_subscriber::filter::Targets::new()
         .with_targets(vec![
-            ("tuic", CONFIG.log_level),
-            ("tuic_quinn", CONFIG.log_level),
-            ("tuic_server", CONFIG.log_level),
+            ("tuic", ctx.cfg.log_level),
+            ("tuic_quinn", ctx.cfg.log_level),
+            ("tuic_server", ctx.cfg.log_level),
         ])
         .with_default(LevelFilter::INFO);
     let registry = tracing_subscriber::registry();
@@ -68,7 +68,7 @@ async fn main() -> eyre::Result<()> {
         )
         .try_init()?;
     tokio::spawn(async move {
-        match Server::init() {
+        match Server::init(ctx.clone()) {
             Ok(server) => server.start().await,
             Err(err) => {
                 eprintln!("{err}");

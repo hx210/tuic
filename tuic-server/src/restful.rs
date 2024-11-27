@@ -3,13 +3,14 @@ use std::{
     net::SocketAddr,
     ops::Deref,
     sync::{
-        LazyLock,
+        Arc, LazyLock,
         atomic::{AtomicU64, Ordering},
     },
 };
 
 use axum::{
     Json, Router,
+    extract::State,
     http::StatusCode,
     routing::{get, post},
 };
@@ -24,7 +25,7 @@ use serde_json::json;
 use tracing::warn;
 use uuid::Uuid;
 
-use crate::CONFIG;
+use crate::AppContext;
 
 static ONLINE_COUNTER: LateInit<HashMap<Uuid, AtomicU64>> = LateInit::new();
 static ONLINE_CLIENTS: LazyLock<CHashMap<Uuid, HashSet<QuicClient>>> = LazyLock::new(CHashMap::new);
@@ -56,14 +57,14 @@ impl PartialEq for QuicClient {
 }
 impl Eq for QuicClient {}
 
-pub async fn start() {
+pub async fn start(ctx: Arc<AppContext>) {
     let mut online = HashMap::new();
-    for (user, _) in CONFIG.users.iter() {
+    for (user, _) in ctx.cfg.users.iter() {
         online.insert(user.to_owned(), AtomicU64::new(0));
     }
 
     let mut traffic = HashMap::new();
-    for (user, _) in CONFIG.users.iter() {
+    for (user, _) in ctx.cfg.users.iter() {
         // TODO use persist
         traffic.insert(user.to_owned(), (AtomicU64::new(0), AtomicU64::new(0)));
     }
@@ -72,24 +73,26 @@ pub async fn start() {
         TRAFFIC_STATS.init(traffic);
     }
 
-    let restful = CONFIG.restful.as_ref().unwrap();
+    let restful = ctx.cfg.restful.as_ref().unwrap();
     let addr = restful.addr;
     let app = Router::new()
         .route("/kick", post(kick))
         .route("/online", get(list_online))
         .route("/detailed_online", get(list_detailed_online))
         .route("/traffic", get(list_traffic))
-        .route("/reset_traffic", get(reset_traffic));
+        .route("/reset_traffic", get(reset_traffic))
+        .with_state(ctx);
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     warn!("RESTful server started, listening on {addr}");
     axum::serve(listener, app).await.unwrap();
 }
 
 async fn kick(
+    State(ctx): State<Arc<AppContext>>,
     token: Option<TypedHeader<Authorization<Bearer>>>,
     Json(users): Json<Vec<Uuid>>,
 ) -> StatusCode {
-    if let Some(restful) = &CONFIG.restful
+    if let Some(restful) = &ctx.cfg.restful
         && !restful.secret.is_empty()
         && let Some(TypedHeader(token)) = token
         && restful.secret != token.token()
@@ -107,9 +110,10 @@ async fn kick(
 }
 
 async fn list_online(
+    State(ctx): State<Arc<AppContext>>,
     token: Option<TypedHeader<Authorization<Bearer>>>,
 ) -> (StatusCode, Json<HashMap<Uuid, u64>>) {
-    if let Some(restful) = &CONFIG.restful
+    if let Some(restful) = &ctx.cfg.restful
         && !restful.secret.is_empty()
         && let Some(TypedHeader(token)) = token
         && restful.secret != token.token()
@@ -128,9 +132,10 @@ async fn list_online(
 }
 
 async fn list_detailed_online(
+    State(ctx): State<Arc<AppContext>>,
     token: Option<TypedHeader<Authorization<Bearer>>>,
 ) -> (StatusCode, Json<HashMap<Uuid, Vec<SocketAddr>>>) {
-    if let Some(restful) = &CONFIG.restful
+    if let Some(restful) = &ctx.cfg.restful
         && !restful.secret.is_empty()
         && let Some(TypedHeader(token)) = token
         && restful.secret != token.token()
@@ -149,9 +154,10 @@ async fn list_detailed_online(
 }
 
 async fn list_traffic(
+    State(ctx): State<Arc<AppContext>>,
     token: Option<TypedHeader<Authorization<Bearer>>>,
 ) -> (StatusCode, Json<HashMap<Uuid, serde_json::Value>>) {
-    if let Some(restful) = &CONFIG.restful
+    if let Some(restful) = &ctx.cfg.restful
         && !restful.secret.is_empty()
         && let Some(TypedHeader(token)) = token
         && restful.secret != token.token()
@@ -171,9 +177,10 @@ async fn list_traffic(
 }
 
 async fn reset_traffic(
+    State(ctx): State<Arc<AppContext>>,
     token: Option<TypedHeader<Authorization<Bearer>>>,
 ) -> (StatusCode, Json<HashMap<Uuid, serde_json::Value>>) {
-    if let Some(restful) = &CONFIG.restful
+    if let Some(restful) = &ctx.cfg.restful
         && !restful.secret.is_empty()
         && let Some(TypedHeader(token)) = token
         && restful.secret != token.token()
@@ -192,11 +199,11 @@ async fn reset_traffic(
     (StatusCode::OK, Json(result))
 }
 
-pub async fn client_connect(uuid: &Uuid, conn: QuinnConnection) {
-    if CONFIG.restful.is_none() {
+pub async fn client_connect(ctx: &AppContext, uuid: &Uuid, conn: QuinnConnection) {
+    if ctx.cfg.restful.is_none() {
         return;
     }
-    let cfg = CONFIG.restful.as_ref().unwrap();
+    let cfg = ctx.cfg.restful.as_ref().unwrap();
     let current = ONLINE_COUNTER
         .get(uuid)
         .expect("Authorized UUID not present in users table")
@@ -214,8 +221,8 @@ pub async fn client_connect(uuid: &Uuid, conn: QuinnConnection) {
         })
         .await;
 }
-pub async fn client_disconnect(uuid: &Uuid, conn: QuinnConnection) {
-    if CONFIG.restful.is_none() {
+pub async fn client_disconnect(ctx: &AppContext, uuid: &Uuid, conn: QuinnConnection) {
+    if ctx.cfg.restful.is_none() {
         return;
     }
     ONLINE_COUNTER
@@ -227,8 +234,8 @@ pub async fn client_disconnect(uuid: &Uuid, conn: QuinnConnection) {
     }
 }
 
-pub fn traffic_tx(uuid: &Uuid, size: u64) {
-    if CONFIG.restful.is_none() {
+pub fn traffic_tx(ctx: &AppContext, uuid: &Uuid, size: u64) {
+    if ctx.cfg.restful.is_none() {
         return;
     }
     if let Some((tx, _)) = TRAFFIC_STATS.get(uuid) {
@@ -236,8 +243,8 @@ pub fn traffic_tx(uuid: &Uuid, size: u64) {
     }
 }
 
-pub fn traffic_rx(uuid: &Uuid, size: u64) {
-    if CONFIG.restful.is_none() {
+pub fn traffic_rx(ctx: &AppContext, uuid: &Uuid, size: u64) {
+    if ctx.cfg.restful.is_none() {
         return;
     }
     if let Some((__, rx)) = TRAFFIC_STATS.get(uuid) {
