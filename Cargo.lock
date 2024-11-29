@@ -1766,6 +1766,7 @@ dependencies = [
  "futures-util",
  "quinn",
  "thiserror 1.0.69",
+ "tracing",
  "tuic",
  "uuid",
 ]
