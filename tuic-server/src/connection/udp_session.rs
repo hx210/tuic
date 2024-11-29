@@ -10,7 +10,7 @@ use tokio::{
     net::UdpSocket,
     sync::{RwLock as AsyncRwLock, oneshot},
 };
-use tracing::{debug, warn};
+use tracing::warn;
 use tuic::Address;
 
 use super::Connection;
@@ -186,16 +186,5 @@ impl UdpSession {
         if let Some(v) = self.close.write().await.take() {
             _ = v.send(());
         }
-    }
-}
-
-impl Drop for UdpSession {
-    fn drop(&mut self) {
-        debug!(
-            "[{id:#010x}] [{addr}] [{user}] udp session get dropped",
-            id = self.conn.id(),
-            addr = self.conn.inner.remote_address(),
-            user = self.conn.auth,
-        );
     }
 }

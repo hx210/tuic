@@ -16,6 +16,7 @@ use quinn::{
     SendStream, VarInt,
 };
 use thiserror::Error;
+use tracing::warn;
 use tuic::{
     Address, Header, UnmarshalError,
     model::{
@@ -573,9 +574,10 @@ struct KeyingMaterialExporter(QuinnConnection);
 impl KeyingMaterialExporterImpl for KeyingMaterialExporter {
     fn export_keying_material(&self, label: &[u8], context: &[u8]) -> [u8; 32] {
         let mut buf = [0; 32];
-        self.0
-            .export_keying_material(&mut buf, label, context)
-            .unwrap();
+        if let Err(err) = self.0.export_keying_material(&mut buf, label, context) {
+            warn!("export keying material error {:#?}", err);
+            buf = [0; 32];
+        }
         buf
     }
 }
