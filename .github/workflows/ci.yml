@@ -56,6 +56,7 @@ jobs:
             target: i686-unknown-linux-musl
             release-name: i686-linux-musl
             cross: true
+            extra-args: "--no-default-features --features ring"
           # Linux arm
           - os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
@@ -65,10 +66,12 @@ jobs:
             target: armv7-unknown-linux-gnueabi
             release-name: armv7-linux
             cross: true
+            extra-args: "--no-default-features --features ring"
           - os: ubuntu-latest
             target: armv7-unknown-linux-gnueabihf
             release-name: armv7-linux-hf
             cross: true
+            extra-args: "--no-default-features --features ring"
           # Linux arm musl
           - os: ubuntu-latest
             target: aarch64-unknown-linux-musl
@@ -78,10 +81,12 @@ jobs:
             target: armv7-unknown-linux-musleabi
             release-name: armv7-linux-musl
             cross: true
+            extra-args: "--no-default-features --features ring"
           - os: ubuntu-latest
             target: armv7-unknown-linux-musleabihf
             release-name: armv7-linux-muslhf
             cross: true
+            extra-args: "--no-default-features --features ring"
           # Windows
           - os: windows-latest
             target: x86_64-pc-windows-msvc
@@ -93,6 +98,7 @@ jobs:
             release-name: i686-windows
             cross: false
             postfix: ".exe"
+            extra-args: "--no-default-features --features ring"
           # Windows Arm
           - os: windows-latest
             target: aarch64-pc-windows-msvc
@@ -122,6 +128,7 @@ jobs:
             target: riscv64gc-unknown-linux-gnu
             release-name: riscv64gc-linux
             cross: true
+            extra-args: "--no-default-features --features ring"
 
           # Loongarch64 ring problem
           # - os: ubuntu-latest
