@@ -241,7 +241,7 @@ jobs:
       - name: Clean git tag & release
         if: startsWith(github.ref, 'refs/heads/dev')
         run: |
-          gh release delete latest --cleanup-tag --yes --repo $GITHUB_REPOSITORY
+          gh release delete latest --cleanup-tag --yes --repo $GITHUB_REPOSITORY || true
           # Deleted latest tag and push it
           git tag -d latest || true
           # Create local tag
