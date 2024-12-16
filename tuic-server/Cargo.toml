@@ -66,3 +66,6 @@ eyre = { version = "0.6" }
 # Web
 axum = { version = "0.7", features = ["json", "tokio"] }
 axum-extra = { version = "0.9", features = ["typed-header"] }
+
+[target.'cfg(not(target_env = "msvc"))'.dependencies]
+tikv-jemallocator = "0.6"
