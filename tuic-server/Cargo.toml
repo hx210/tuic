@@ -12,10 +12,10 @@ license.workspace = true
 repository.workspace = true
 
 [features]
-default = ["aws-lc-rs"]
+default = ["aws-lc-rs", "jemallocator"]
 ring = ["rustls/ring", "rcgen/ring", "quinn/rustls-ring"]
 aws-lc-rs = ["rustls/aws-lc-rs", "rcgen/aws_lc_rs", "quinn/rustls-aws-lc-rs"]
-
+jemallocator = ["tikv-jemallocator"]
 
 [dependencies]
 
@@ -67,5 +67,4 @@ eyre = { version = "0.6" }
 axum = { version = "0.7", features = ["json", "tokio"] }
 axum-extra = { version = "0.9", features = ["typed-header"] }
 
-[target.'cfg(not(target_env = "msvc"))'.dependencies]
-tikv-jemallocator = "0.6"
+tikv-jemallocator = { version = "0.6", optional = true }

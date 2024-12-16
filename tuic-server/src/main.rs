@@ -18,10 +18,10 @@ mod restful;
 mod server;
 mod utils;
 
-#[cfg(not(target_env = "msvc"))]
+#[cfg(all(not(target_env = "msvc"), feature = "jemallocator"))]
 use tikv_jemallocator::Jemalloc;
 
-#[cfg(not(target_env = "msvc"))]
+#[cfg(all(not(target_env = "msvc"), feature = "jemallocator"))]
 #[global_allocator]
 static GLOBAL: Jemalloc = Jemalloc;
 

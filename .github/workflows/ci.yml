@@ -66,12 +66,12 @@ jobs:
             target: armv7-unknown-linux-gnueabi
             release-name: armv7-linux
             cross: true
-            extra-args: "--no-default-features --features ring"
+            extra-args: "--no-default-features --features ring,jemallocator"
           - os: ubuntu-latest
             target: armv7-unknown-linux-gnueabihf
             release-name: armv7-linux-hf
             cross: true
-            extra-args: "--no-default-features --features ring"
+            extra-args: "--no-default-features --features ring,jemallocator"
           # Linux arm musl
           - os: ubuntu-latest
             target: aarch64-unknown-linux-musl
@@ -93,6 +93,7 @@ jobs:
             release-name: x86_64-windows
             cross: false
             postfix: ".exe"
+            extra-args: "--no-default-features --features aws-lc-rs"
           - os: windows-latest
             target: i686-pc-windows-msvc
             release-name: i686-windows
@@ -105,12 +106,14 @@ jobs:
             release-name: aarch64-windows
             cross: false
             postfix: ".exe"
+            extra-args: "--no-default-features --features aws-lc-rs"
 
           # MacOSX
           - os: macos-13
             target: x86_64-apple-darwin
             release-name: x86_64-darwin
             cross: false
+
           - os: macos-14
             target: aarch64-apple-darwin
             release-name: aarch64-darwin
@@ -128,7 +131,7 @@ jobs:
             target: riscv64gc-unknown-linux-gnu
             release-name: riscv64gc-linux
             cross: true
-            extra-args: "--no-default-features --features ring"
+            extra-args: "--no-default-features --features ring,jemallocator"
 
           # Loongarch64 ring problem
           # - os: ubuntu-latest
