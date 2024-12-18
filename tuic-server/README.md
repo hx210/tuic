@@ -53,6 +53,7 @@ services:
       - ./cert.crt:/PATH/TO/CERT:ro
       - ./key.crt:/PATH/TO/KEY:ro
 ```
+
 If you use TOML format configuration
 
 
@@ -176,6 +177,14 @@ controller = "bbr" # Default: "bbr"
 
 # Sets the initial congestion window size in bytes for the congestion controller algorithm, which may improve burst performance but could lead to congestion under high concurrency.
 initial_window = 1048576 # Default: 1048576
+```
+## Notes
+To automatically get TLS cert and key, recommend use [acme.sh](https://github.com/acmesh-official/acme.sh)
+```sh
+acme.sh --issue -d www.yourdomain.org --standalone
+acme.sh --install-cert -d www.yourdomain.org \
+--key-file       /CERT_PATH/key.crt  \
+--fullchain-file /CERT_PATH/cert.crt
 ```
 
 ## RESTful API
