@@ -200,16 +200,7 @@ jobs:
         with:
           use-cross: ${{ matrix.cross }}
           command: build
-          args: --package ${{ env.PACKAGE }} --release --target ${{ matrix.target }} ${{ matrix.extra-args }}
-        env:
-          RUSTFLAGS: ${{ matrix.rustflags }}
-
-      - name: Cargo build
-        uses: clechasseur/rs-cargo@v2
-        with:
-          use-cross: ${{ matrix.cross }}
-          command: build
-          args: --package ${{ env.PACKAGE2 }} --release --target ${{ matrix.target }} ${{ matrix.extra-args }}
+          args: --workspace --release --target ${{ matrix.target }} ${{ matrix.extra-args }}
         env:
           RUSTFLAGS: ${{ matrix.rustflags }}
 

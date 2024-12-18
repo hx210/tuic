@@ -68,7 +68,7 @@ async fn load_cert_key(cert_path: &Path, key_path: &Path) -> eyre::Result<Arc<Ce
     #[cfg(feature = "aws-lc-rs")]
     let key = rustls::crypto::aws_lc_rs::sign::any_supported_type(&der)?;
     #[cfg(feature = "ring")]
-    let key = rustls::ring::crypto::ring::sign::any_supported_type(&der)?;
+    let key = rustls::crypto::ring::sign::any_supported_type(&der)?;
 
     let cert_key = CertifiedKey::new(cert_chain, key);
     Ok(Arc::new(cert_key))
