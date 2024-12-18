@@ -188,7 +188,7 @@ acme.sh --install-cert -d www.yourdomain.org \
 ```
 
 ## RESTful API
-With authorization header when making a request. `curl -H 'Authorization: Bearer YOUR_SECRET_HERE' http://ip:port/path` 
+With authorization header when making a request. `curl -H 'Authorization: Bearer YOUR_SECRET_HERE' http://ip:port/path`
 
 Or with authorization disabled `curl  http://ip:port/path`
 
