@@ -10,6 +10,7 @@ Compared to origin, this fork's new features:
 - More relaxed locks
 - More CI targets via [cross-rs](https://github.com/cross-rs/cross)
 - Self-signed cert and `skip_cert_verify` support
+- ServerCert auto hot-reload
 - And [more...](https://github.com/EAimTY/tuic/compare/dev...Itsusinn:tuic:dev)
 
 ## Introduction

@@ -20,7 +20,8 @@ use crate::{
     AppContext,
     connection::{Connection, INIT_CONCURRENT_STREAMS},
     error::Error,
-    utils::{self, CongestionController},
+    tls::CertResolver,
+    utils::CongestionController,
 };
 
 pub struct Server {
@@ -29,7 +30,7 @@ pub struct Server {
 }
 
 impl Server {
-    pub fn init(ctx: Arc<AppContext>) -> Result<Self, Error> {
+    pub async fn init(ctx: Arc<AppContext>) -> Result<Self, Error> {
         let mut crypto: RustlsServerConfig;
         if ctx.cfg.tls.self_sign {
             let cert = rcgen::generate_simple_self_signed(vec!["localhost".into()]).unwrap();
@@ -39,11 +40,12 @@ impl Server {
                 .with_no_client_auth()
                 .with_single_cert(vec![cert_der], PrivateKeyDer::Pkcs8(priv_key))?;
         } else {
-            let certs = utils::load_cert_chain(&ctx.cfg.tls.certificate)?;
-            let priv_key = utils::load_priv_key(&ctx.cfg.tls.private_key)?;
+            let cert_resolver =
+                CertResolver::new(&ctx.cfg.tls.certificate, &ctx.cfg.tls.private_key).await?;
+
             crypto = RustlsServerConfig::builder_with_protocol_versions(&[&rustls::version::TLS13])
                 .with_no_client_auth()
-                .with_single_cert(certs, priv_key)?;
+                .with_cert_resolver(cert_resolver);
         }
 
         crypto.alpn_protocols = ctx

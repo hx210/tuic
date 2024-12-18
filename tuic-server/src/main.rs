@@ -16,6 +16,7 @@ mod error;
 mod old_config;
 mod restful;
 mod server;
+mod tls;
 mod utils;
 
 #[cfg(all(not(target_env = "msvc"), feature = "jemallocator"))]
@@ -75,7 +76,7 @@ async fn main() -> eyre::Result<()> {
         )
         .try_init()?;
     tokio::spawn(async move {
-        match Server::init(ctx.clone()) {
+        match Server::init(ctx.clone()).await {
             Ok(server) => server.start().await,
             Err(err) => {
                 eprintln!("{err}");
