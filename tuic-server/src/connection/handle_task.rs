@@ -7,7 +7,7 @@ use std::{
 use bytes::Bytes;
 use eyre::{OptionExt, eyre};
 use tokio::{
-    io::{self, AsyncWriteExt},
+    io::AsyncWriteExt,
     net::{self, TcpStream},
 };
 use tracing::{info, warn};
@@ -15,7 +15,7 @@ use tuic::Address;
 use tuic_quinn::{Authenticate, Connect, Packet};
 
 use super::{Connection, ERROR_CODE, UdpSession};
-use crate::{error::Error, restful, utils::UdpRelayMode};
+use crate::{error::Error, io::exchange_tcp, restful, utils::UdpRelayMode};
 
 impl Connection {
     pub async fn handle_authenticate(&self, auth: Authenticate) {
@@ -59,16 +59,23 @@ impl Connection {
             }
 
             if let Some(mut stream) = stream {
-                let res = io::copy_bidirectional(&mut conn, &mut stream).await;
-                _ = conn.reset(ERROR_CODE);
-                _ = stream.shutdown().await;
                 // a -> b tx
                 // a <- b rx
-                let (tx, rx) = res?;
-                let uuid = self.auth.get().unwrap();
-                restful::traffic_tx(&self.ctx, &uuid, tx);
-                restful::traffic_rx(&self.ctx, &uuid, rx);
-                Ok::<_, Error>(())
+                let (tx, rx, err) =
+                    exchange_tcp(&mut conn, &mut stream, self.ctx.cfg.stream_timeout).await;
+                _ = conn.reset(ERROR_CODE);
+                _ = stream.shutdown().await;
+
+                let uuid = self
+                    .auth
+                    .get()
+                    .ok_or_eyre("Unexpected autherization state")?;
+                restful::traffic_tx(&self.ctx, &uuid, tx as u64);
+                restful::traffic_rx(&self.ctx, &uuid, rx as u64);
+                if let Some(err) = err {
+                    return Err(err);
+                }
+                Ok(())
             } else {
                 let _ = conn.shutdown().await;
                 Err(last_err
@@ -79,7 +86,7 @@ impl Connection {
         match process.await {
             Ok(()) => {}
             Err(err) => warn!(
-                "[{id:#010x}] [{addr}] [{user}] [TCP] {target_addr}: {err}",
+                "[{id:#010x}] [{addr}] [{user}] [TCP] {target_addr}: {err:#?}",
                 id = self.id(),
                 addr = self.inner.remote_address(),
                 user = self.auth,
@@ -151,7 +158,11 @@ impl Connection {
                     "no address resolved",
                 )));
             };
-            restful::traffic_tx(&self.ctx, &self.auth.get().unwrap(), pkt.len() as u64);
+            let uuid = self
+                .auth
+                .get()
+                .ok_or_eyre("Unexpected autherization state")?;
+            restful::traffic_tx(&self.ctx, &uuid, pkt.len() as u64);
             if let Some(session) = session.upgrade() {
                 session.send(pkt, socket_addr).await
             } else {

@@ -13,6 +13,7 @@ use crate::{old_config::ConfigError, server::Server};
 mod config;
 mod connection;
 mod error;
+mod io;
 mod old_config;
 mod restful;
 mod server;

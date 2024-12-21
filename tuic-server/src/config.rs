@@ -60,6 +60,10 @@ pub struct Config {
 
     #[educe(Default = 1500)]
     pub max_external_packet_size: usize,
+
+    #[serde(with = "humantime_serde")]
+    #[educe(Default(expression = Duration::from_millis(10000)))]
+    pub stream_timeout: Duration,
 }
 
 #[derive(Deserialize, Serialize, Educe)]

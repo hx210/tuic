@@ -115,6 +115,9 @@ gc_lifetime = "15s" # Default: "15s"
 # Maximum packet size the server can receive from outbound UDP sockets, in bytes
 max_external_packet_size = 1500
 
+# How long should server perserve TCP and UDP IO tasks.
+stream_timeout = "10s" # Default: "10s"
+
 # User list, contains user UUID and password
 [users] # Default: empty
 f0e12827-fe60-458c-8269-a05ccb0ff8da = "YOUR_USER_PASSWD_HERE"
@@ -210,7 +213,7 @@ APIs:
 
 - GET `http://ip:port/traffic`
 
-  Return current traffic stats.  
+  Return current traffic stats.
   > Traffic data will be lost when `tuic-server` restarts.
 
   Response: TODO

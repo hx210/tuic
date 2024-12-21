@@ -404,8 +404,8 @@ impl Authenticate {
 /// A received `Connect` command.
 pub struct Connect {
     model: Side<ConnectModel<Tx>, ConnectModel<Rx>>,
-    send: SendStream,
-    recv: RecvStream,
+    pub send: SendStream,
+    pub recv: RecvStream,
 }
 
 impl Connect {

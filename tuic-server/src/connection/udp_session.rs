@@ -91,7 +91,7 @@ impl UdpSession {
         // UdpSession's real owner.
         let listen = async move {
             let mut rx = rx;
-            let mut timeout = tokio::time::interval(ctx.cfg.gc_lifetime);
+            let mut timeout = tokio::time::interval(ctx.cfg.stream_timeout);
             timeout.reset();
 
             loop {
