@@ -16,6 +16,13 @@ mod error;
 mod socks5;
 mod utils;
 
+#[cfg(feature = "jemallocator")]
+use tikv_jemallocator::Jemalloc;
+
+#[cfg(feature = "jemallocator")]
+#[global_allocator]
+static GLOBAL: Jemalloc = Jemalloc;
+
 #[tokio::main]
 async fn main() {
     let cfg = match Config::parse(env::args_os()) {

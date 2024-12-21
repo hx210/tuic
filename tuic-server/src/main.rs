@@ -19,10 +19,10 @@ mod server;
 mod tls;
 mod utils;
 
-#[cfg(all(not(target_env = "msvc"), feature = "jemallocator"))]
+#[cfg(feature = "jemallocator")]
 use tikv_jemallocator::Jemalloc;
 
-#[cfg(all(not(target_env = "msvc"), feature = "jemallocator"))]
+#[cfg(feature = "jemallocator")]
 #[global_allocator]
 static GLOBAL: Jemalloc = Jemalloc;
 
