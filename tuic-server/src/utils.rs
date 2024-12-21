@@ -4,9 +4,9 @@ use std::{
 };
 
 use educe::Educe;
-use notify::{Event, RecommendedWatcher, Watcher};
+use notify::{EventKind, RecommendedWatcher, Watcher};
 use serde::{Deserialize, Serialize};
-use tokio::sync::mpsc::{Receiver, channel};
+use tokio::sync::broadcast;
 
 #[derive(Clone, Copy)]
 pub enum UdpRelayMode {
@@ -70,16 +70,18 @@ where
     }
 }
 
-pub async fn async_watcher() -> notify::Result<(RecommendedWatcher, Receiver<notify::Result<Event>>)>
-{
-    let (tx, rx) = channel(1);
-
+pub async fn async_watcher() -> eyre::Result<(RecommendedWatcher, broadcast::Receiver<()>)> {
+    let (tx, rx) = broadcast::channel(1);
     let watcher = RecommendedWatcher::new(
-        move |res| {
-            let tx = tx.clone();
-            tokio::task::spawn(async move {
-                tx.send(res).await.unwrap();
-            });
+        move |res: Result<notify::Event, notify::Error>| {
+            if let Ok(event) = res {
+                match event.kind {
+                    EventKind::Create(_) | EventKind::Modify(_) => {
+                        tx.send(()).unwrap();
+                    }
+                    _ => {}
+                }
+            }
         },
         notify::Config::default(),
     )?;

@@ -18,17 +18,18 @@ pub async fn exchange_tcp(
     let mut last_err = None;
     let mut timeout = tokio::time::interval(timeout);
     timeout.reset();
+
     loop {
         tokio::select! {
             _ = timeout.tick() => {
                 last_err = Some(eyre::eyre!("TCP stream timeout"));
                 break;
             },
-
             a2b_res = a.recv.read(&mut a2b) => match a2b_res {
                 Ok(Some(num)) => {
                     a2b_num += num;
-                    if let Err(err) = b.write(&a2b).await {
+                    timeout.reset();
+                    if let Err(err) = b.write_all(&a2b[..num]).await {
                         last_err = Some(err.into());
                         break;
                     }
@@ -50,7 +51,8 @@ pub async fn exchange_tcp(
                         break;
                     }
                     b2a_num += num;
-                    if let Err(err) = a.send.write(&b2a).await {
+                    timeout.reset();
+                    if let Err(err) = a.send.write_all(&b2a[..num]).await {
                         last_err = Some(err.into());
                         break;
                     }

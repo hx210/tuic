@@ -2069,7 +2069,7 @@ dependencies = [
 
 [[package]]
 name = "tuic"
-version = "1.4.0"
+version = "1.4.1"
 dependencies = [
  "bytes",
  "futures-util",
@@ -2082,7 +2082,7 @@ dependencies = [
 
 [[package]]
 name = "tuic-client"
-version = "1.4.0"
+version = "1.4.1"
 dependencies = [
  "anyhow",
  "bytes",
@@ -2114,7 +2114,7 @@ dependencies = [
 
 [[package]]
 name = "tuic-quinn"
-version = "1.4.0"
+version = "1.4.1"
 dependencies = [
  "bytes",
  "eyre",
@@ -2128,7 +2128,7 @@ dependencies = [
 
 [[package]]
 name = "tuic-server"
-version = "1.4.0"
+version = "1.4.1"
 dependencies = [
  "arc-swap",
  "axum",

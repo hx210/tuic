@@ -1,5 +1,4 @@
-#![feature(trivial_bounds)]
-#![feature(let_chains, async_closure)]
+#![feature(let_chains, trivial_bounds)]
 
 use std::{env, process, sync::Arc};
 

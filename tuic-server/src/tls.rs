@@ -1,6 +1,7 @@
 use std::{
+    ops::Deref,
     path::{Path, PathBuf},
-    sync::Arc,
+    sync::{Arc, RwLock},
 };
 
 use eyre::Context;
@@ -10,8 +11,7 @@ use rustls::{
     server::{ClientHello, ResolvesServerCert},
     sign::CertifiedKey,
 };
-use tokio::sync::RwLock;
-use tracing::{error, warn};
+use tracing::warn;
 
 use crate::utils::{self, FutResultExt};
 
@@ -40,16 +40,11 @@ impl CertResolver {
         let (mut watcher, mut rx) = utils::async_watcher().await?;
 
         watcher.watch(self.cert_path.as_ref(), RecursiveMode::NonRecursive)?;
-
-        while let Some(res) = rx.recv().await {
-            match res {
-                Err(e) => error!("TLS cert-key reload watcher error: {:?}", e),
-                Ok(_) => {
-                    warn!("TLS cert-key reload");
-                    let cert_key = load_cert_key(&self.cert_path, &self.key_path).await?;
-                    let mut guard = self.cert_key.write().await;
-                    *guard = cert_key;
-                }
+        while (rx.recv().await).is_ok() {
+            warn!("TLS cert-key reload");
+            let cert_key = load_cert_key(&self.cert_path, &self.key_path).await?;
+            if let Ok(mut guard) = self.cert_key.write() {
+                *guard = cert_key;
             }
         }
         Ok(())
@@ -57,7 +52,7 @@ impl CertResolver {
 }
 impl ResolvesServerCert for CertResolver {
     fn resolve(&self, _: ClientHello<'_>) -> Option<Arc<CertifiedKey>> {
-        Some(self.cert_key.blocking_read().clone())
+        Some(self.cert_key.read().ok()?.deref().clone())
     }
 }
 

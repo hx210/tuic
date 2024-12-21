@@ -19,7 +19,7 @@ mod handle_stream;
 mod handle_task;
 mod udp_session;
 
-pub const ERROR_CODE: VarInt = VarInt::from_u32(0);
+pub const ERROR_CODE: VarInt = VarInt::from_u32(6000);
 pub const INIT_CONCURRENT_STREAMS: u32 = 32;
 
 #[derive(Clone)]
