@@ -28,7 +28,7 @@ impl Connection {
         );
     }
 
-    pub async fn handle_connect(&self, conn: Connect) {
+    pub async fn handle_connect(&self, mut conn: Connect) {
         let target_addr = conn.addr().to_string();
 
         info!(

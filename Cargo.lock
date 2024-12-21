@@ -2089,6 +2089,7 @@ dependencies = [
  "bytes",
  "crossbeam-utils",
  "env_logger",
+ "eyre",
  "humantime",
  "lexopt",
  "log",
@@ -2117,9 +2118,10 @@ name = "tuic-quinn"
 version = "1.3.6"
 dependencies = [
  "bytes",
- "futures-util",
+ "eyre",
  "quinn",
  "thiserror",
+ "tokio",
  "tracing",
  "tuic",
  "uuid",
@@ -2155,7 +2157,6 @@ dependencies = [
  "tikv-jemallocator",
  "time",
  "tokio",
- "tokio-util",
  "toml",
  "tracing",
  "tracing-subscriber",

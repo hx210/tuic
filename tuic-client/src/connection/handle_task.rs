@@ -42,7 +42,7 @@ impl Connection {
         }
     }
 
-    pub async fn packet(&self, pkt: Bytes, addr: Address, assoc_id: u16) -> Result<(), Error> {
+    pub async fn packet(&self, pkt: Bytes, addr: Address, assoc_id: u16) -> eyre::Result<()> {
         let addr_display = addr.to_string();
 
         match self.udp_relay_mode {
@@ -55,7 +55,7 @@ impl Connection {
                             "[relay] [packet] [{assoc_id:#06x}] [to-native] to {addr_display}: \
                              {err}"
                         );
-                        Err(Error::Model(err))
+                        Err(err)?
                     }
                 }
             }
@@ -67,20 +67,20 @@ impl Connection {
                         log::warn!(
                             "[relay] [packet] [{assoc_id:#06x}] [to-quic] to {addr_display}: {err}"
                         );
-                        Err(Error::Model(err))
+                        Err(err)
                     }
                 }
             }
         }
     }
 
-    pub async fn dissociate(&self, assoc_id: u16) -> Result<(), Error> {
+    pub async fn dissociate(&self, assoc_id: u16) -> eyre::Result<()> {
         log::info!("[relay] [dissociate] [{assoc_id:#06x}]");
         match self.model.dissociate(assoc_id).await {
             Ok(()) => Ok(()),
             Err(err) => {
                 log::warn!("[relay] [dissociate] [{assoc_id:#06x}] {err}");
-                Err(Error::Model(err))
+                Err(err)?
             }
         }
     }

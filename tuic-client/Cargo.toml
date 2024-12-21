@@ -55,5 +55,6 @@ rustls-pemfile = { version = "2", default-features = false, features = ["std"] }
 # Error-handling
 thiserror = { version = "2", default-features = false }
 anyhow = "1"
+eyre = { version = "0" }
 
 tikv-jemallocator = { version = "0.6", optional = true }

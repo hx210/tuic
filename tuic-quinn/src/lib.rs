@@ -64,9 +64,9 @@ impl<Side> Connection<Side> {
         pkt: impl AsRef<[u8]>,
         addr: Address,
         assoc_id: u16,
-    ) -> Result<(), Error> {
+    ) -> eyre::Result<()> {
         let Some(max_pkt_size) = self.conn.max_datagram_size() else {
-            return Err(Error::SendDatagram(SendDatagramError::Disabled));
+            return Err(Error::SendDatagram(SendDatagramError::Disabled))?;
         };
 
         let model = self.model.send_packet(assoc_id, addr, max_pkt_size);
@@ -87,16 +87,15 @@ impl<Side> Connection<Side> {
         pkt: impl AsRef<[u8]>,
         addr: Address,
         assoc_id: u16,
-    ) -> Result<(), Error> {
+    ) -> eyre::Result<()> {
         let model = self.model.send_packet(assoc_id, addr, u16::MAX as usize);
 
         for (header, frag) in model.into_fragments(pkt) {
             let mut send = self.conn.open_uni().await?;
             header.async_marshal(&mut send).await?;
-            AsyncWriteExt::write_all(&mut send, frag).await?;
-            send.close().await?;
+            send.write_all(frag).await?;
+            send.finish()?;
         }
-
         Ok(())
     }
 
@@ -132,14 +131,14 @@ impl Connection<side::Client> {
     }
 
     /// Sends an `Authenticate` command.
-    pub async fn authenticate(&self, uuid: Uuid, password: impl AsRef<[u8]>) -> Result<(), Error> {
+    pub async fn authenticate(&self, uuid: Uuid, password: impl AsRef<[u8]>) -> eyre::Result<()> {
         let model = self
             .model
             .send_authenticate(uuid, password, &self.keying_material_exporter());
 
         let mut send = self.conn.open_uni().await?;
         model.header().async_marshal(&mut send).await?;
-        send.close().await?;
+        send.finish()?;
         Ok(())
     }
 
@@ -152,11 +151,11 @@ impl Connection<side::Client> {
     }
 
     /// Sends a `Dissociate` command.
-    pub async fn dissociate(&self, assoc_id: u16) -> Result<(), Error> {
+    pub async fn dissociate(&self, assoc_id: u16) -> eyre::Result<()> {
         let model = self.model.send_dissociate(assoc_id);
         let mut send = self.conn.open_uni().await?;
         model.header().async_marshal(&mut send).await?;
-        send.close().await?;
+        send.finish()?;
         Ok(())
     }
 
@@ -448,8 +447,8 @@ impl AsyncRead for Connect {
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
-        buf: &mut [u8],
-    ) -> Poll<Result<usize, IoError>> {
+        buf: &mut ReadBuf<'_>,
+    ) -> Poll<std::io::Result<()>> {
         AsyncRead::poll_read(Pin::new(&mut self.get_mut().recv), cx, buf)
     }
 }
@@ -467,8 +466,11 @@ impl AsyncWrite for Connect {
         AsyncWrite::poll_flush(Pin::new(&mut self.get_mut().send), cx)
     }
 
-    fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), IoError>> {
-        AsyncWrite::poll_close(Pin::new(&mut self.get_mut().send), cx)
+    fn poll_shutdown(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<Result<(), std::io::Error>> {
+        AsyncWrite::poll_shutdown(Pin::new(&mut self.get_mut().send), cx)
     }
 }
 
@@ -586,7 +588,7 @@ impl KeyingMaterialExporterImpl for KeyingMaterialExporter {
 #[derive(Debug, Error)]
 pub enum Error {
     #[error(transparent)]
-    Io(#[from] IoError),
+    IoError(#[from] IoError),
     #[error(transparent)]
     Connection(#[from] ConnectionError),
     #[error(transparent)]
@@ -609,4 +611,6 @@ pub enum Error {
     BadCommandBiStream(&'static str, SendStream, RecvStream),
     #[error("bad command `{0}` from datagram")]
     BadCommandDatagram(&'static str, Bytes),
+    #[error(transparent)]
+    QuicWriteError(#[from] quinn::WriteError),
 }

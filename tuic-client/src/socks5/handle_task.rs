@@ -70,7 +70,7 @@ impl Server {
 
                             match TuicConnection::get_conn().await {
                                 Ok(conn) => conn.packet(pkt, target_addr, assoc_id).await,
-                                Err(err) => Err(err),
+                                Err(err) => Err(err)?,
                             }
                         };
 
@@ -113,17 +113,13 @@ impl Server {
                     .remove(&assoc_id)
                     .unwrap();
 
-                let res = match TuicConnection::get_conn().await {
-                    Ok(conn) => conn.dissociate(assoc_id).await,
-                    Err(err) => Err(err),
-                };
-
-                match res {
-                    Ok(()) => {}
-                    Err(err) => log::warn!(
+                if let Ok(conn) = TuicConnection::get_conn().await
+                    && let Err(err) = conn.dissociate(assoc_id).await
+                {
+                    log::warn!(
                         "[socks5] [{peer_addr}] [associate] [{assoc_id:#06x}] failed stopping UDP \
                          relaying session: {err}"
-                    ),
+                    )
                 }
             }
             Err(err) => {
@@ -178,30 +174,26 @@ impl Server {
         };
 
         match relay {
-            Ok(relay) => {
-                let mut relay = relay.compat();
-
-                match conn.reply(Reply::Succeeded, Address::unspecified()).await {
-                    Ok(mut conn) => match io::copy_bidirectional(&mut conn, &mut relay).await {
-                        Ok(_) => {}
-                        Err(err) => {
-                            let _ = conn.shutdown().await;
-                            let _ = relay.get_mut().reset(ERROR_CODE);
-                            log::warn!(
-                                "[socks5] [{peer_addr}] [connect] [{target_addr}] TCP stream \
-                                 relaying error: {err}"
-                            );
-                        }
-                    },
+            Ok(mut relay) => match conn.reply(Reply::Succeeded, Address::unspecified()).await {
+                Ok(mut conn) => match io::copy_bidirectional(&mut conn, &mut relay).await {
+                    Ok(_) => {}
                     Err(err) => {
-                        let _ = relay.shutdown().await;
+                        let _ = conn.shutdown().await;
+                        let _ = relay.reset(ERROR_CODE);
                         log::warn!(
-                            "[socks5] [{peer_addr}] [connect] [{target_addr}] command reply \
+                            "[socks5] [{peer_addr}] [connect] [{target_addr}] TCP stream relaying \
                              error: {err}"
                         );
                     }
+                },
+                Err(err) => {
+                    let _ = relay.shutdown().await;
+                    log::warn!(
+                        "[socks5] [{peer_addr}] [connect] [{target_addr}] command reply error: \
+                         {err}"
+                    );
                 }
-            }
+            },
             Err(err) => {
                 log::warn!(
                     "[socks5] [{peer_addr}] [connect] [{target_addr}] unable to relay TCP stream: \
