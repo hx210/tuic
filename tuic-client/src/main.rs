@@ -1,3 +1,5 @@
+#![feature(let_chains)]
+
 use std::{env, process};
 
 use env_logger::Builder as LoggerBuilder;

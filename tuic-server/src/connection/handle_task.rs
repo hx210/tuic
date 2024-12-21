@@ -10,7 +10,6 @@ use tokio::{
     io::{self, AsyncWriteExt},
     net::{self, TcpStream},
 };
-use tokio_util::compat::FuturesAsyncReadCompatExt;
 use tracing::{info, warn};
 use tuic::Address;
 use tuic_quinn::{Authenticate, Connect, Packet};
@@ -60,9 +59,8 @@ impl Connection {
             }
 
             if let Some(mut stream) = stream {
-                let mut conn = conn.compat();
                 let res = io::copy_bidirectional(&mut conn, &mut stream).await;
-                _ = conn.get_mut().reset(ERROR_CODE);
+                _ = conn.reset(ERROR_CODE);
                 _ = stream.shutdown().await;
                 // a -> b tx
                 // a <- b rx
@@ -72,7 +70,7 @@ impl Connection {
                 restful::traffic_rx(&self.ctx, &uuid, rx);
                 Ok::<_, Error>(())
             } else {
-                let _ = conn.compat().shutdown().await;
+                let _ = conn.shutdown().await;
                 Err(last_err
                     .unwrap_or_else(|| IoError::new(ErrorKind::NotFound, "no address resolved")))?
             }

@@ -9,13 +9,13 @@ use std::{
 };
 
 use bytes::{BufMut, Bytes, BytesMut};
-use futures_util::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 pub use quinn;
 use quinn::{
     ClosedStream, Connection as QuinnConnection, ConnectionError, RecvStream, SendDatagramError,
     SendStream, VarInt,
 };
 use thiserror::Error;
+use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, ReadBuf};
 use tracing::warn;
 use tuic::{
     Address, Header, UnmarshalError,
