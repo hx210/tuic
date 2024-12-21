@@ -37,7 +37,7 @@ impl CertResolver {
     }
 
     async fn start_watch(&self) -> eyre::Result<()> {
-        let (mut watcher, mut rx) = utils::async_watcher()?;
+        let (mut watcher, mut rx) = utils::async_watcher().await?;
 
         watcher.watch(self.cert_path.as_ref(), RecursiveMode::NonRecursive)?;
 

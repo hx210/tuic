@@ -70,7 +70,8 @@ where
     }
 }
 
-pub fn async_watcher() -> notify::Result<(RecommendedWatcher, Receiver<notify::Result<Event>>)> {
+pub async fn async_watcher() -> notify::Result<(RecommendedWatcher, Receiver<notify::Result<Event>>)>
+{
     let (tx, rx) = channel(1);
 
     let watcher = RecommendedWatcher::new(
