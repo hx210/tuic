@@ -22,7 +22,7 @@ TUIC is originally designed to be used on top of the [QUIC](https://en.wikipedia
 When paired with QUIC, TUIC can achieve:
 
 - 0-RTT TCP proxying
-- 0-RTT UDP proxying with NAT type [Full Cone](https://www.rfc-editor.org/rfc/rfc3489#section-5)
+- 0-RTT UDP proxying with NAT type [Full Cone](https://www.rfc-editor.org/rfc/rfc3489#section-5) 
 - 0-RTT authentication
 - Two UDP proxying modes:
     - `native`: Having characteristics of native UDP mechanism

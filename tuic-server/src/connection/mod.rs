@@ -36,7 +36,6 @@ pub struct Connection {
     max_concurrent_bi_streams: Arc<AtomicU32>,
 }
 
-#[allow(clippy::too_many_arguments)]
 impl Connection {
     pub async fn handle(ctx: Arc<AppContext>, conn: Connecting) {
         let addr = conn.remote_address();

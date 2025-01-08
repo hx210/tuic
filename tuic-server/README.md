@@ -115,7 +115,7 @@ gc_lifetime = "15s" # Default: "15s"
 # Maximum packet size the server can receive from outbound UDP sockets, in bytes
 max_external_packet_size = 1500
 
-# How long should server perserve TCP and UDP IO tasks.
+# How long should server perserve TCP and UDP I/O tasks.
 stream_timeout = "10s" # Default: "10s"
 
 # User list, contains user UUID and password
