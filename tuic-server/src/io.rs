@@ -1,12 +1,10 @@
-use std::time::Duration;
-
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 const BUFFER_SIZE: usize = 8 * 1024;
 
 pub async fn exchange_tcp(
     a: &mut tuic_quinn::Connect,
-    b: &mut tokio::net::TcpStream
+    b: &mut tokio::net::TcpStream,
 ) -> (usize, usize, Option<eyre::Error>) {
     let mut a2b = [0u8; BUFFER_SIZE];
     let mut b2a = [0u8; BUFFER_SIZE];
@@ -21,7 +19,6 @@ pub async fn exchange_tcp(
             a2b_res = a.recv.read(&mut a2b) => match a2b_res {
                 Ok(Some(num)) => {
                     a2b_num += num;
-                    timeout.reset();
                     if let Err(err) = b.write_all(&a2b[..num]).await {
                         last_err = Some(err.into());
                         break;
@@ -44,7 +41,6 @@ pub async fn exchange_tcp(
                         break;
                     }
                     b2a_num += num;
-                    timeout.reset();
                     if let Err(err) = a.send.write_all(&b2a[..num]).await {
                         last_err = Some(err.into());
                         break;

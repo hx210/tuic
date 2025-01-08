@@ -61,8 +61,7 @@ impl Connection {
             if let Some(mut stream) = stream {
                 // a -> b tx
                 // a <- b rx
-                let (tx, rx, err) =
-                    exchange_tcp(&mut conn, &mut stream).await;
+                let (tx, rx, err) = exchange_tcp(&mut conn, &mut stream).await;
 
                 _ = conn.reset(ERROR_CODE);
                 _ = stream.shutdown().await;
